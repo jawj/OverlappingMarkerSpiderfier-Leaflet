@@ -1,5 +1,5 @@
 ###* @preserve OverlappingMarkerSpiderfier
-https://github.com/jawj/OverlappingMarkerSpiderfier
+https://github.com/jawj/OverlappingMarkerSpiderfier-Leaflet
 Copyright (c) 2011 - 2012 George MacKerron
 Released under the MIT licence: http://opensource.org/licenses/mit-license
 Note: The Leaflet maps API must be included *before* this code
