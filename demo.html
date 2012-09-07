@@ -15,13 +15,13 @@
   
   <link rel="stylesheet" href="leaflet/leaflet.css" />
   <!--[if lte IE 8]><link rel="stylesheet" href="leaflet/leaflet.ie.css" /><![endif]-->
-  <script src="leaflet/leaflet-src.js"></script>
+  <script src="leaflet/leaflet.js"></script>
   <script type="text/javascript" src="http://maps.stamen.com/js/tile.stamen.js"></script>
   
-  <script src="bin/oms.js"></script>
+  <script src="bin/oms.min.js"></script>
   <script>
     window.onload = function() {
-      var map = new L.Map('map_canvas');
+	    var map = new L.Map('map_canvas');
       var layer = new L.StamenTileLayer('watercolor');
       map.addLayer(layer);
       
