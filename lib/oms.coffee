@@ -11,7 +11,7 @@ return unless this['L']?  # return from wrapper func without doing anything
 
 class @['OverlappingMarkerSpiderfier']
   p = @::  # this saves a lot of repetition of .prototype that isn't optimized away
-  p['VERSION'] = '0.2.5'
+  p['VERSION'] = '0.2.6'
   
   twoPi = Math.PI * 2
   
@@ -119,6 +119,7 @@ class @['OverlappingMarkerSpiderfier']
       pxSq = @['nearbyDistance'] * @['nearbyDistance']
       markerPt = @map.latLngToLayerPoint(marker.getLatLng())
       for m in @markers
+        continue unless @map.hasLayer(m)
         mPt = @map.latLngToLayerPoint(m.getLatLng())
         if @ptDistanceSq(mPt, markerPt) < pxSq
           nearbyMarkerData.push(marker: m, markerPt: mPt)
