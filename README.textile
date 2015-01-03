@@ -1,3 +1,5 @@
+h1. This fork makes the OverlappingMarkerSpiderfier for Leaflet available as bower-package.
+
 h1. Overlapping Marker Spiderfier for Leaflet
 
 *Ever noticed how, in "Google Earth":http://earth.google.com, marker pins that overlap each other spring apart gracefully when you click them, so you can pick the one you meant?*
