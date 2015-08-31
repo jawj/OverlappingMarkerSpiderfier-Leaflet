@@ -25,23 +25,17 @@ Note: The Leaflet maps API must be included *before* this code
     twoPi = Math.PI * 2;
 
     p['keepSpiderfied'] = false;
-
     p['nearbyDistance'] = 20;
 
     p['circleSpiralSwitchover'] = 9;
 
     p['circleFootSeparation'] = 25;
-
     p['circleStartAngle'] = twoPi / 12;
-
     p['spiralFootSeparation'] = 28;
-
     p['spiralLengthStart'] = 11;
-
     p['spiralLengthFactor'] = 5;
 
     p['legWeight'] = 1.5;
-
     p['legColors'] = {
       'usual': '#222',
       'highlighted': '#f00'
