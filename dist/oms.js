@@ -297,7 +297,7 @@ Note: The Leaflet maps API must be included *before* this code
       return this.trigger('spiderfy', spiderfiedMarkers, nonNearbyMarkers);
     };
 
-    /*p['unspiderfy'] = function(markerNotToMove) {
+    p['unspiderfy'] = function(markerNotToMove) {
       var marker, mhl, nonNearbyMarkers, unspiderfiedMarkers, _i, _len, _ref;
 
       if (markerNotToMove == null) {
@@ -333,11 +333,8 @@ Note: The Leaflet maps API must be included *before* this code
       delete this.spiderfied;
       this.trigger('unspiderfy', unspiderfiedMarkers, nonNearbyMarkers);
       return this;
-    };*/
-    p['unspiderfy'] = function() {
-      return this;
     };
-
+    
     p.ptDistanceSq = function(pt1, pt2) {
       var dx, dy;
 
