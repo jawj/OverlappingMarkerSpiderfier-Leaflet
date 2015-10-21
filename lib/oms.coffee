@@ -159,7 +159,7 @@ class @['OverlappingMarkerSpiderfier']
         marker.addEventListener('mouseover', mhl.highlight)
         marker.addEventListener('mouseout',  mhl.unhighlight)
       marker.setLatLng(footLl)
-      marker.setZIndexOffset(1000000)
+      marker.setZIndexOffset(marker.options.zIndexOffset + 1000000)
       marker
     delete @spiderfying
     @spiderfied = yes
@@ -174,7 +174,7 @@ class @['OverlappingMarkerSpiderfier']
       if marker['_omsData']?
         @map.removeLayer(marker['_omsData'].leg)
         marker.setLatLng(marker['_omsData'].usualPosition) unless marker is markerNotToMove
-        marker.setZIndexOffset(0)
+        marker.setZIndexOffset(marker.options.zIndexOffset - 0)
         mhl = marker['_omsData'].highlightListeners
         if mhl?
           marker.removeEventListener('mouseover', mhl.highlight)
