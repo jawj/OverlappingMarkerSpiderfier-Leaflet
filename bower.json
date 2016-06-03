@@ -1,0 +1,28 @@
+{
+  "name": "spiderfy",
+  "homepage": "https://github.com/jawj/OverlappingMarkerSpiderfier-Leaflet",
+  "authors": [
+    "George MacKerron <george@mackerron.com>"
+  ],
+  "description": "Overlapping Marker Spiderfier for Leaflet",
+  "main": "oms.js",
+  "keywords": [
+    "leaflet",
+    "cluster",
+    "spider",
+    "spiderfy",
+    "group",
+    "markers"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "leaflet": "0.7.3"
+  }
+}
