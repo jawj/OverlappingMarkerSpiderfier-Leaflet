@@ -9,8 +9,8 @@
     body { height: auto; margin: 0; padding: 0; font-family: Georgia, serif; font-size: 0.9em; }
     table { border-collapse: collapse; border-spacing: 0; }
     p { margin: 0.75em 0; }
-    #map_canvas { height: auto; position: absolute; bottom: 0; left: 0; right: 0; top: 0; }
-    @media print { #map_canvas { height: 950px; } }
+    #map { height: auto; position: absolute; bottom: 0; left: 0; right: 0; top: 0; }
+    @media print { #map { height: 950px; } }
   </style>
 
   <link rel="stylesheet" href="bower_components/leaflet/dist/leaflet.css" />
@@ -20,12 +20,12 @@
   <script src="oms.js"></script>
   <script>
     window.onload = function() {
-      var map = new L.Map('map_canvas');
+      var map = new L.Map('map');
       var layer = new L.StamenTileLayer('watercolor');
       map.addLayer(layer);
 
       var lightIcon = L.Icon.Default;
-      var darkIcon  = L.Icon.Default.extend({options: {iconUrl: L.Icon.Default.imagePath + '/marker-desat.png'}});
+      var darkIcon  = L.Icon.Default.extend({options: {iconUrl: 'marker-desat.png'}});
 
       var oms = new OverlappingMarkerSpiderfier(map);
 
@@ -61,7 +61,7 @@
     }
   </script>
 </head>
-<body><div id="map_canvas"></div></body>
+<body><div id="map"></div></body>
 <script>
   // randomize some overlapping map data -- more normally we'd load some JSON data instead
   var baseJitter = 2.5;
