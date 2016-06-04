@@ -151,6 +151,9 @@ These determine the usual and highlighted colours of the lines.
 
 You can also get and set any of the options noted in the constructor function documentation above as properties on an OverlappingMarkerSpiderfier instance.
 
+h3. Canvas
+Leaflet.spiderfy is 100% compliant with Leaflet's canvas renderer.  Simply place `window.L_PREFER_CANVAS = true` before loading leaflet, and robert it your mother's brother.
+
 h2. Licence
 
 This software is released under the "MIT licence":http://www.opensource.org/licenses/mit-license.php.
