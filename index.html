@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+  <title>Overlapping Marker Spiderfier demo</title>
+  <style>
+    html { height: auto; }
+    body { height: auto; margin: 0; padding: 0; font-family: Georgia, serif; font-size: 0.9em; }
+    table { border-collapse: collapse; border-spacing: 0; }
+    p { margin: 0.75em 0; }
+    #map_canvas { height: auto; position: absolute; bottom: 0; left: 0; right: 0; top: 0; }
+    @media print { #map_canvas { height: 950px; } }
+  </style>
+
+  <link rel="stylesheet" href="bower_components/leaflet/dist/leaflet.css" />
+  <script src="bower_components/leaflet/dist/leaflet.js"></script>
+  <script type="text/javascript" src="http://maps.stamen.com/js/tile.stamen.js"></script>
+
+  <script src="oms.js"></script>
+  <script>
+    window.onload = function() {
+      var map = new L.Map('map_canvas');
+      var layer = new L.StamenTileLayer('watercolor');
+      map.addLayer(layer);
+
+      var lightIcon = L.Icon.Default;
+      var darkIcon  = L.Icon.Default.extend({options: {iconUrl: L.Icon.Default.imagePath + '/marker-desat.png'}});
+
+      var oms = new OverlappingMarkerSpiderfier(map);
+
+      var bounds = new L.LatLngBounds();
+      for (var i = 0; i < window.mapData.length; i ++) {
+        var datum = window.mapData[i];
+        var loc = new L.LatLng(datum.lat, datum.lon);
+        bounds.extend(loc);
+        var marker = new L.Marker(loc, {icon: new darkIcon()});
+        marker.desc = datum.d;
+        map.addLayer(marker);
+        oms.addMarker(marker);
+      }
+      map.fitBounds(bounds);
+
+      var popup = new L.Popup({closeButton: false, offset: new L.Point(0.5, -24)});
+      oms.addListener('click', function(marker) {
+        popup.setContent(marker.desc);
+        popup.setLatLng(marker.getLatLng());
+        map.openPopup(popup);
+      });
+      oms.addListener('spiderfy', function(markers) {
+        for (var i = 0, len = markers.length; i < len; i ++) markers[i].setIcon(new lightIcon());
+        map.closePopup();
+      });
+      oms.addListener('unspiderfy', function(markers) {
+        for (var i = 0, len = markers.length; i < len; i ++) markers[i].setIcon(new darkIcon());
+      });
+
+      // for debugging/exploratory use in console
+      window.map = map;
+      window.oms = oms;
+    }
+  </script>
+</head>
+<body><div id="map_canvas"></div></body>
+<script>
+  // randomize some overlapping map data -- more normally we'd load some JSON data instead
+  var baseJitter = 2.5;
+  var clusterJitterMax = 0.1;
+  var rnd = Math.random;
+  var data = [];
+  var clusterSizes = [1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2,2, 3, 3, 4, 5, 6, 7, 8, 9, 12, 18, 24];
+  for (var i = 0; i < clusterSizes.length; i++) {
+    var baseLon = -1 - baseJitter / 2 + rnd() * baseJitter;
+    var baseLat = 52 - baseJitter / 2 + rnd() * baseJitter;
+    var clusterJitter = clusterJitterMax * rnd();
+    for (var j = 0; j < clusterSizes[i]; j ++) data.push({
+      lon: baseLon - clusterJitter + rnd() * clusterJitter,
+      lat: baseLat - clusterJitter + rnd() * clusterJitter,
+      h:   new Date(1E12 + rnd() * 1E11).toString(),
+      d:   Math.round(rnd() * 100) + '% happy'
+    });
+  }
+  window.mapData = data;
+</script>
+</html>
