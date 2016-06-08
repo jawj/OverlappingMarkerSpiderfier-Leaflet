@@ -1,3 +1,4 @@
+'use strict'
 ###* @preserve OverlappingMarkerSpiderfier
 https://github.com/jawj/OverlappingMarkerSpiderfier-Leaflet
 Copyright (c) 2011 - 2012 George MacKerron
@@ -5,84 +6,92 @@ Released under the MIT licence: http://opensource.org/licenses/mit-license
 Note: The Leaflet maps API must be included *before* this code
 ###
 
-# NB. string literal properties -- object['key'] -- are for Closure Compiler ADVANCED_OPTIMIZATION
+# NB. string literal properties -- object.key -- are for Closure Compiler ADVANCED_OPTIMIZATION
 
-return unless this['L']?  # return from wrapper func without doing anything
+return unless this.L?  # return from wrapper func without doing anything
 
-class @['OverlappingMarkerSpiderfier']
+class @.OverlappingMarkerSpiderfier
   p = @::  # this saves a lot of repetition of .prototype that isn't optimized away
-  p['VERSION'] = '0.2.6'
-  
+  p.VERSION = '0.2.6'
   twoPi = Math.PI * 2
+
+  defaultOpts =
+    keepSpiderfied: no           # yes -> don't unspiderfy when a marker is selected
+    nearbyDistance: 20           # spiderfy markers within this range of the one clicked, in px
   
-  p['keepSpiderfied'] = no           # yes -> don't unspiderfy when a marker is selected
-  p['nearbyDistance'] = 20           # spiderfy markers within this range of the one clicked, in px
-  
-  p['circleSpiralSwitchover'] = 9    # show spiral instead of circle from this marker count upwards
+    circleSpiralSwitchover: 9    # show spiral instead of circle from this marker count upwards
                                      # 0 -> always spiral; Infinity -> always circle
-  p['circleFootSeparation'] = 25     # related to circumference of circle
-  p['circleStartAngle'] = twoPi / 12
-  p['spiralFootSeparation'] = 28     # related to size of spiral (experiment!)
-  p['spiralLengthStart'] = 11        # ditto
-  p['spiralLengthFactor'] = 5        # ditto
+    circleFootSeparation: 25     # related to circumference of circle
+    circleStartAngle: twoPi / 12
+    spiralFootSeparation: 28     # related to size of spiral (experiment!)
+    spiralLengthStart: 11        # ditto
+    spiralLengthFactor: 5        # ditto
    
-  p['legWeight'] = 1.5
-  p['legColors'] =
-    'usual': '#222'
-    'highlighted': '#f00'
+    legWeight: 1.5
+    legColors:
+      usual: '#222'
+      highlighted: '#f00'
+    unspiderfyEvents: ['click', 'zoomend']
+    spiderfyMarkerEvent: 'click'
+    body: {
+      color: '#222'
+      radius: 3
+      opacity: 0.9
+      fillOpacity: 0.9
+    }
 
   # Note: it's OK that this constructor comes after the properties, because of function hoisting
   constructor: (@map, opts = {}) ->
-    (@[k] = v) for own k, v of opts
+    extend(@, defaultOpts, opts)
     @initMarkerArrays()
     @listeners = {}
-    @map.addEventListener(e, => @['unspiderfy']()) for e in ['click', 'zoomend']
+    @map.addEventListener(e, => @.unspiderfy()) for e in @.unspiderfyEvents
     
   p.initMarkerArrays = ->
     @markers = []
     @markerListeners = []
     
-  p['addMarker'] = (marker) ->
-    return @ if marker['_oms']?
-    marker['_oms'] = yes
+  p.addMarker = (marker) ->
+    return @ if marker._oms?
+    marker._oms = yes
     markerListener = => @spiderListener(marker)
-    marker.addEventListener('click', markerListener)
+    marker.addEventListener(@.spiderfyMarkerEvent, markerListener)
     @markerListeners.push(markerListener)
     @markers.push(marker)
     @  # return self, for chaining
 
-  p['getMarkers'] = -> @markers[0..]  # returns a copy, so no funny business
+  p.getMarkers = -> @markers[0..]  # returns a copy, so no funny business
 
-  p['removeMarker'] = (marker) ->
-    @['unspiderfy']() if marker['_omsData']?  # otherwise it'll be stuck there forever!
+  p.removeMarker = (marker) ->
+    @.unspiderfy() if marker._omsData?  # otherwise it'll be stuck there forever!
     i = @arrIndexOf(@markers, marker)
     return @ if i < 0
     markerListener = @markerListeners.splice(i, 1)[0]
-    marker.removeEventListener('click', markerListener)
-    delete marker['_oms']
+    marker.removeEventListener(@.spiderfyMarkerEvent, markerListener)
+    delete marker._oms
     @markers.splice(i, 1)
     @  # return self, for chaining
     
-  p['clearMarkers'] = ->
-    @['unspiderfy']()
+  p.clearMarkers = ->
+    @.unspiderfy()
     for marker, i in @markers
       markerListener = @markerListeners[i]
-      marker.removeEventListener('click', markerListener)
-      delete marker['_oms']
+      marker.removeEventListener(@.spiderfyMarkerEvent, markerListener)
+      delete marker._oms
     @initMarkerArrays()
     @  # return self, for chaining
         
   # available listeners: click(marker), spiderfy(markers), unspiderfy(markers)
-  p['addListener'] = (event, func) ->
+  p.addListener = (event, func) ->
     (@listeners[event] ?= []).push(func)
     @  # return self, for chaining
     
-  p['removeListener'] = (event, func) ->
+  p.removeListener = (event, func) ->
     i = @arrIndexOf(@listeners[event], func)
     @listeners[event].splice(i, 1) unless i < 0
     @  # return self, for chaining
   
-  p['clearListeners'] = (event) ->
+  p.clearListeners = (event) ->
     @listeners[event] = []
     @  # return self, for chaining
   
@@ -90,33 +99,35 @@ class @['OverlappingMarkerSpiderfier']
     func(args...) for func in (@listeners[event] ? [])
   
   p.generatePtsCircle = (count, centerPt) ->
-    circumference = @['circleFootSeparation'] * (2 + count)
+    circumference = @.circleFootSeparation * (2 + count)
     legLength = circumference / twoPi  # = radius from circumference
     angleStep = twoPi / count
     for i in [0...count]
-      angle = @['circleStartAngle'] + i * angleStep
+      angle = @.circleStartAngle + i * angleStep
       new L.Point(centerPt.x + legLength * Math.cos(angle), 
                   centerPt.y + legLength * Math.sin(angle))
   
   p.generatePtsSpiral = (count, centerPt) ->
-    legLength = @['spiralLengthStart']
+    legLength = @.spiralLengthStart
     angle = 0
     for i in [0...count]
-      angle += @['spiralFootSeparation'] / legLength + i * 0.0005
+      angle += @.spiralFootSeparation / legLength + i * 0.0005
       pt = new L.Point(centerPt.x + legLength * Math.cos(angle), 
                        centerPt.y + legLength * Math.sin(angle))
-      legLength += twoPi * @['spiralLengthFactor'] / angle
+      legLength += twoPi * @.spiralLengthFactor / angle
       pt
   
   p.spiderListener = (marker) ->
-    markerSpiderfied = marker['_omsData']?
-    @['unspiderfy']() unless markerSpiderfied and @['keepSpiderfied']
+    markerSpiderfied = marker._omsData?
+    if !@.keepSpiderfied
+      @.unspiderfy() unless markerSpiderfied
     if markerSpiderfied
       @trigger('click', marker)
+      return @
     else
       nearbyMarkerData = []
       nonNearbyMarkers = []
-      pxSq = @['nearbyDistance'] * @['nearbyDistance']
+      pxSq = @.nearbyDistance * @.nearbyDistance
       markerPt = @map.latLngToLayerPoint(marker.getLatLng())
       for m in @markers
         continue unless @map.hasLayer(m)
@@ -131,31 +142,34 @@ class @['OverlappingMarkerSpiderfier']
         @spiderfy(nearbyMarkerData, nonNearbyMarkers)
   
   p.makeHighlightListeners = (marker) ->
-    highlight:   => marker['_omsData'].leg.setStyle(color: @['legColors']['highlighted'])
-    unhighlight: => marker['_omsData'].leg.setStyle(color: @['legColors']['usual'])
+    highlight:   => marker._omsData.leg.setStyle(color: @.legColors.highlighted)
+    unhighlight: => marker._omsData.leg.setStyle(color: @.legColors.usual)
   
   p.spiderfy = (markerData, nonNearbyMarkers) ->
     @spiderfying = yes
     numFeet = markerData.length
     bodyPt = @ptAverage(md.markerPt for md in markerData)
-    footPts = if numFeet >= @['circleSpiralSwitchover'] 
+    footPts = if numFeet >= @.circleSpiralSwitchover
       @generatePtsSpiral(numFeet, bodyPt).reverse()  # match from outside in => less criss-crossing
     else
       @generatePtsCircle(numFeet, bodyPt)
+    lastMarkerCoords = null
     spiderfiedMarkers = for footPt in footPts
       footLl = @map.layerPointToLatLng(footPt)
       nearestMarkerDatum = @minExtract(markerData, (md) => @ptDistanceSq(md.markerPt, footPt))
       marker = nearestMarkerDatum.marker
-      leg = new L.Polyline [marker.getLatLng(), footLl], {
-        color: @['legColors']['usual']
-        weight: @['legWeight']
+      markerCoords = marker.getLatLng()
+      lastMarkerCoords = markerCoords
+      leg = new L.Polyline [markerCoords, footLl], {
+        color: @.legColors.usual
+        weight: @.legWeight
         clickable: no
       }
       @map.addLayer(leg)
-      marker['_omsData'] = {usualPosition: marker.getLatLng(), leg: leg}
-      unless @['legColors']['highlighted'] is @['legColors']['usual']
+      marker._omsData = {usualPosition: marker.getLatLng(), leg: leg}
+      unless @.legColors.highlighted is @.legColors.usual
         mhl = @makeHighlightListeners(marker)
-        marker['_omsData'].highlightListeners = mhl
+        marker._omsData.highlightListeners = mhl
         marker.addEventListener('mouseover', mhl.highlight)
         marker.addEventListener('mouseout',  mhl.unhighlight)
       marker.setLatLng(footLl)
@@ -164,24 +178,27 @@ class @['OverlappingMarkerSpiderfier']
       marker
     delete @spiderfying
     @spiderfied = yes
+    if @.body
+      body = L.circleMarker(lastMarkerCoords, @.body)
+      @map.addLayer(body)
     @trigger('spiderfy', spiderfiedMarkers, nonNearbyMarkers)
   
-  p['unspiderfy'] = (markerNotToMove = null) ->
+  p.unspiderfy = (markerNotToMove = null) ->
     return @ unless @spiderfied?
     @unspiderfying = yes
     unspiderfiedMarkers = []
     nonNearbyMarkers = []
     for marker in @markers
-      if marker['_omsData']?
-        @map.removeLayer(marker['_omsData'].leg)
-        marker.setLatLng(marker['_omsData'].usualPosition) unless marker is markerNotToMove
+      if marker._omsData?
+        @map.removeLayer(marker._omsData.leg)
+        marker.setLatLng(marker._omsData.usualPosition) unless marker is markerNotToMove
         if marker.hasOwnProperty('setZIndexOffset')
           marker.setZIndexOffset(0)
-        mhl = marker['_omsData'].highlightListeners
+        mhl = marker._omsData.highlightListeners
         if mhl?
           marker.removeEventListener('mouseover', mhl.highlight)
           marker.removeEventListener('mouseout',  mhl.unhighlight)
-        delete marker['_omsData']
+        delete marker._omsData
         unspiderfiedMarkers.push(marker)
       else
         nonNearbyMarkers.push(marker)
@@ -196,7 +213,8 @@ class @['OverlappingMarkerSpiderfier']
     dx * dx + dy * dy
   
   p.ptAverage = (pts) ->
-    sumX = sumY = 0
+    sumX = 0
+    sumY = 0
     for pt in pts
       sumX += pt.x; sumY += pt.y
     numPts = pts.length
@@ -214,3 +232,15 @@ class @['OverlappingMarkerSpiderfier']
     return arr.indexOf(obj) if arr.indexOf?
     (return i if o is obj) for o, i in arr
     -1
+
+extend = (out = {}) ->
+  i = 1
+  while i < arguments.length
+    if !arguments[i]
+      i++
+      continue
+    for key of arguments[i]
+      if arguments[i].hasOwnProperty(key)
+        out[key] = arguments[i][key]
+    i++
+  out
