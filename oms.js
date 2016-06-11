@@ -57,20 +57,23 @@
       extend(this, defaultOpts, opts);
       this.initMarkerArrays();
       this.listeners = {};
-      ref = this.unspiderfyEvents;
-      for (j = 0, len = ref.length; j < len; j++) {
-        e = ref[j];
-        this.map.addEventListener(e, (function(_this) {
-          return function() {
-            return _this.unspiderfy();
-          };
-        })(this));
+      if (this.unspiderfyEvents && this.unspiderfyEvents.length) {
+        ref = this.unspiderfyEvents;
+        for (j = 0, len = ref.length; j < len; j++) {
+          e = ref[j];
+          this.map.addEventListener(e, (function(_this) {
+            return function() {
+              return _this.unspiderfy();
+            };
+          })(this));
+        }
       }
     }
 
     p.initMarkerArrays = function() {
       this.markers = [];
-      return this.markerListeners = [];
+      this.markerListeners = [];
+      return this.bodies = [];
     };
 
     p.addMarker = function(marker) {
@@ -84,7 +87,9 @@
           return _this.spiderListener(marker);
         };
       })(this);
-      marker.addEventListener(this.spiderfyMarkerEvent, markerListener);
+      if (this.spiderfyMarkerEvent && this.spiderfyMarkerEvent.length) {
+        marker.addEventListener(this.spiderfyMarkerEvent, markerListener);
+      }
       this.markerListeners.push(markerListener);
       this.markers.push(marker);
       return this;
@@ -104,7 +109,9 @@
         return this;
       }
       markerListener = this.markerListeners.splice(i, 1)[0];
-      marker.removeEventListener(this.spiderfyMarkerEvent, markerListener);
+      if (this.spiderfyMarkerEvent && this.spiderfyMarkerEvent.length) {
+        marker.removeEventListener(this.spiderfyMarkerEvent, markerListener);
+      }
       delete marker._oms;
       this.markers.splice(i, 1);
       return this;
@@ -117,7 +124,9 @@
       for (i = j = 0, len = ref.length; j < len; i = ++j) {
         marker = ref[i];
         markerListener = this.markerListeners[i];
-        marker.removeEventListener(this.spiderfyMarkerEvent, markerListener);
+        if (this.spiderfyMarkerEvent && this.spiderfyMarkerEvent.length) {
+          marker.removeEventListener(this.spiderfyMarkerEvent, markerListener);
+        }
         delete marker._oms;
       }
       this.initMarkerArrays();
@@ -300,12 +309,13 @@
       if (this.body) {
         body = L.circleMarker(lastMarkerCoords, this.body);
         this.map.addLayer(body);
+        this.bodies.push(body);
       }
       return this.trigger('spiderfy', spiderfiedMarkers, nonNearbyMarkers);
     };
 
     p.unspiderfy = function(markerNotToMove) {
-      var j, len, marker, mhl, nonNearbyMarkers, ref, unspiderfiedMarkers;
+      var body, j, k, len, len1, marker, mhl, nonNearbyMarkers, ref, ref1, unspiderfiedMarkers;
       if (markerNotToMove == null) {
         markerNotToMove = null;
       }
@@ -336,6 +346,11 @@
         } else {
           nonNearbyMarkers.push(marker);
         }
+      }
+      ref1 = this.bodies;
+      for (k = 0, len1 = ref1.length; k < len1; k++) {
+        body = ref1[k];
+        this.map.removeLayer(body);
       }
       delete this.unspiderfying;
       delete this.spiderfied;

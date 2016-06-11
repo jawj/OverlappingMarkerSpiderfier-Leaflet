@@ -10,7 +10,7 @@ Note: The Leaflet maps API must be included *before* this code
 
 return unless this.L?  # return from wrapper func without doing anything
 
-class @.OverlappingMarkerSpiderfier
+class @OverlappingMarkerSpiderfier
   p = @::  # this saves a lot of repetition of .prototype that isn't optimized away
   p.VERSION = '0.2.6'
   twoPi = Math.PI * 2
@@ -33,29 +33,31 @@ class @.OverlappingMarkerSpiderfier
       highlighted: '#f00'
     unspiderfyEvents: ['click', 'zoomend']
     spiderfyMarkerEvent: 'click'
-    body: {
+    body:
       color: '#222'
       radius: 3
       opacity: 0.9
       fillOpacity: 0.9
-    }
 
   # Note: it's OK that this constructor comes after the properties, because of function hoisting
   constructor: (@map, opts = {}) ->
     extend(@, defaultOpts, opts)
     @initMarkerArrays()
     @listeners = {}
-    @map.addEventListener(e, => @.unspiderfy()) for e in @.unspiderfyEvents
+    if @unspiderfyEvents && @unspiderfyEvents.length
+      @map.addEventListener(e, => @unspiderfy()) for e in @unspiderfyEvents
     
   p.initMarkerArrays = ->
     @markers = []
     @markerListeners = []
+    @bodies = []
     
   p.addMarker = (marker) ->
     return @ if marker._oms?
     marker._oms = yes
     markerListener = => @spiderListener(marker)
-    marker.addEventListener(@.spiderfyMarkerEvent, markerListener)
+    if @spiderfyMarkerEvent && @spiderfyMarkerEvent.length
+      marker.addEventListener(@spiderfyMarkerEvent, markerListener)
     @markerListeners.push(markerListener)
     @markers.push(marker)
     @  # return self, for chaining
@@ -63,20 +65,22 @@ class @.OverlappingMarkerSpiderfier
   p.getMarkers = -> @markers[0..]  # returns a copy, so no funny business
 
   p.removeMarker = (marker) ->
-    @.unspiderfy() if marker._omsData?  # otherwise it'll be stuck there forever!
+    @unspiderfy() if marker._omsData?  # otherwise it'll be stuck there forever!
     i = @arrIndexOf(@markers, marker)
     return @ if i < 0
     markerListener = @markerListeners.splice(i, 1)[0]
-    marker.removeEventListener(@.spiderfyMarkerEvent, markerListener)
+    if @spiderfyMarkerEvent && @spiderfyMarkerEvent.length
+      marker.removeEventListener(@spiderfyMarkerEvent, markerListener)
     delete marker._oms
     @markers.splice(i, 1)
     @  # return self, for chaining
     
   p.clearMarkers = ->
-    @.unspiderfy()
+    @unspiderfy()
     for marker, i in @markers
       markerListener = @markerListeners[i]
-      marker.removeEventListener(@.spiderfyMarkerEvent, markerListener)
+      if @spiderfyMarkerEvent && @spiderfyMarkerEvent.length
+        marker.removeEventListener(@spiderfyMarkerEvent, markerListener)
       delete marker._oms
     @initMarkerArrays()
     @  # return self, for chaining
@@ -99,35 +103,35 @@ class @.OverlappingMarkerSpiderfier
     func(args...) for func in (@listeners[event] ? [])
   
   p.generatePtsCircle = (count, centerPt) ->
-    circumference = @.circleFootSeparation * (2 + count)
+    circumference = @circleFootSeparation * (2 + count)
     legLength = circumference / twoPi  # = radius from circumference
     angleStep = twoPi / count
     for i in [0...count]
-      angle = @.circleStartAngle + i * angleStep
+      angle = @circleStartAngle + i * angleStep
       new L.Point(centerPt.x + legLength * Math.cos(angle), 
                   centerPt.y + legLength * Math.sin(angle))
   
   p.generatePtsSpiral = (count, centerPt) ->
-    legLength = @.spiralLengthStart
+    legLength = @spiralLengthStart
     angle = 0
     for i in [0...count]
-      angle += @.spiralFootSeparation / legLength + i * 0.0005
+      angle += @spiralFootSeparation / legLength + i * 0.0005
       pt = new L.Point(centerPt.x + legLength * Math.cos(angle), 
                        centerPt.y + legLength * Math.sin(angle))
-      legLength += twoPi * @.spiralLengthFactor / angle
+      legLength += twoPi * @spiralLengthFactor / angle
       pt
   
   p.spiderListener = (marker) ->
     markerSpiderfied = marker._omsData?
-    if !@.keepSpiderfied
-      @.unspiderfy() unless markerSpiderfied
+    if !@keepSpiderfied
+      @unspiderfy() unless markerSpiderfied
     if markerSpiderfied
       @trigger('click', marker)
       return @
     else
       nearbyMarkerData = []
       nonNearbyMarkers = []
-      pxSq = @.nearbyDistance * @.nearbyDistance
+      pxSq = @nearbyDistance * @nearbyDistance
       markerPt = @map.latLngToLayerPoint(marker.getLatLng())
       for m in @markers
         continue unless @map.hasLayer(m)
@@ -142,14 +146,14 @@ class @.OverlappingMarkerSpiderfier
         @spiderfy(nearbyMarkerData, nonNearbyMarkers)
   
   p.makeHighlightListeners = (marker) ->
-    highlight:   => marker._omsData.leg.setStyle(color: @.legColors.highlighted)
-    unhighlight: => marker._omsData.leg.setStyle(color: @.legColors.usual)
+    highlight:   => marker._omsData.leg.setStyle(color: @legColors.highlighted)
+    unhighlight: => marker._omsData.leg.setStyle(color: @legColors.usual)
   
   p.spiderfy = (markerData, nonNearbyMarkers) ->
     @spiderfying = yes
     numFeet = markerData.length
     bodyPt = @ptAverage(md.markerPt for md in markerData)
-    footPts = if numFeet >= @.circleSpiralSwitchover
+    footPts = if numFeet >= @circleSpiralSwitchover
       @generatePtsSpiral(numFeet, bodyPt).reverse()  # match from outside in => less criss-crossing
     else
       @generatePtsCircle(numFeet, bodyPt)
@@ -161,13 +165,13 @@ class @.OverlappingMarkerSpiderfier
       markerCoords = marker.getLatLng()
       lastMarkerCoords = markerCoords
       leg = new L.Polyline [markerCoords, footLl], {
-        color: @.legColors.usual
-        weight: @.legWeight
+        color: @legColors.usual
+        weight: @legWeight
         clickable: no
       }
       @map.addLayer(leg)
       marker._omsData = {usualPosition: marker.getLatLng(), leg: leg}
-      unless @.legColors.highlighted is @.legColors.usual
+      unless @legColors.highlighted is @legColors.usual
         mhl = @makeHighlightListeners(marker)
         marker._omsData.highlightListeners = mhl
         marker.addEventListener('mouseover', mhl.highlight)
@@ -178,9 +182,10 @@ class @.OverlappingMarkerSpiderfier
       marker
     delete @spiderfying
     @spiderfied = yes
-    if @.body
-      body = L.circleMarker(lastMarkerCoords, @.body)
+    if @body
+      body = L.circleMarker(lastMarkerCoords, @body)
       @map.addLayer(body)
+      @bodies.push(body)
     @trigger('spiderfy', spiderfiedMarkers, nonNearbyMarkers)
   
   p.unspiderfy = (markerNotToMove = null) ->
@@ -202,6 +207,10 @@ class @.OverlappingMarkerSpiderfier
         unspiderfiedMarkers.push(marker)
       else
         nonNearbyMarkers.push(marker)
+
+    for body in @bodies
+      @map.removeLayer(body)
+
     delete @unspiderfying
     delete @spiderfied
     @trigger('unspiderfy', unspiderfiedMarkers, nonNearbyMarkers)
