@@ -308,7 +308,7 @@
       }).call(this);
       delete this.spiderfying;
       this.spiderfied = true;
-      if (this.body) {
+      if (this.body && lastMarkerCoords !== null) {
         body = L.circleMarker(lastMarkerCoords, this.body);
         this.map.addLayer(body);
         this.bodies.push(body);

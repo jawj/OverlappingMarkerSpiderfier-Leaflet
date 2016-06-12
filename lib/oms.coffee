@@ -184,7 +184,7 @@ class @OverlappingMarkerSpiderfier
       marker
     delete @spiderfying
     @spiderfied = yes
-    if @body
+    if @body && lastMarkerCoords != null
       body = L.circleMarker(lastMarkerCoords, @body)
       @map.addLayer(body)
       @bodies.push(body)
