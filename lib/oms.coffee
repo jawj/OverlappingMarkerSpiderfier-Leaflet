@@ -142,8 +142,10 @@ class @OverlappingMarkerSpiderfier
           nonNearbyMarkers.push(m)
       if nearbyMarkerData.length is 1  # 1 => the one clicked => none nearby
         @trigger('click', marker)
-      else
+      else if (nearbyMarkerData.length > 0 && nonNearbyMarkers.length > 0)
         @spiderfy(nearbyMarkerData, nonNearbyMarkers)
+      else
+        null
   
   p.makeHighlightListeners = (marker) ->
     highlight:   => marker._omsData.leg.setStyle(color: @legColors.highlighted)

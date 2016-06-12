@@ -226,8 +226,10 @@
         }
         if (nearbyMarkerData.length === 1) {
           return this.trigger('click', marker);
-        } else {
+        } else if (nearbyMarkerData.length > 0 && nonNearbyMarkers.length > 0) {
           return this.spiderfy(nearbyMarkerData, nonNearbyMarkers);
+        } else {
+          return null;
         }
       }
     };
