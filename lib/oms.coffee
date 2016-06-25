@@ -22,7 +22,7 @@ class @OverlappingMarkerSpiderfier
     circleSpiralSwitchover: 9    # show spiral instead of circle from this marker count upwards
                                      # 0 -> always spiral; Infinity -> always circle
     circleFootSeparation: 25     # related to circumference of circle
-    circleStartAngle: twoPi / 12
+    circleStartAngle: 1
     spiralFootSeparation: 28     # related to size of spiral (experiment!)
     spiralLengthStart: 11        # ditto
     spiralLengthFactor: 5        # ditto
@@ -106,8 +106,9 @@ class @OverlappingMarkerSpiderfier
     circumference = @circleFootSeparation * (2 + count)
     legLength = circumference / twoPi  # = radius from circumference
     angleStep = twoPi / count
+    calculatedStartAngle = @circleStartAngle * (Math.PI / 180)
     for i in [0...count]
-      angle = @circleStartAngle + i * angleStep
+      angle = calculatedStartAngle + i * angleStep
       new L.Point(centerPt.x + legLength * Math.cos(angle), 
                   centerPt.y + legLength * Math.sin(angle))
   

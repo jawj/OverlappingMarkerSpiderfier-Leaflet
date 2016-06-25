@@ -29,7 +29,7 @@
       nearbyDistance: 20,
       circleSpiralSwitchover: 9,
       circleFootSeparation: 25,
-      circleStartAngle: twoPi / 12,
+      circleStartAngle: 1,
       spiralFootSeparation: 28,
       spiralLengthStart: 11,
       spiralLengthFactor: 5,
@@ -166,13 +166,14 @@
     };
 
     p.generatePtsCircle = function(count, centerPt) {
-      var angle, angleStep, circumference, i, j, legLength, ref, results;
+      var angle, angleStep, calculatedStartAngle, circumference, i, j, legLength, ref, results;
       circumference = this.circleFootSeparation * (2 + count);
       legLength = circumference / twoPi;
       angleStep = twoPi / count;
+      calculatedStartAngle = this.circleStartAngle * (Math.PI / 180);
       results = [];
       for (i = j = 0, ref = count; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-        angle = this.circleStartAngle + i * angleStep;
+        angle = calculatedStartAngle + i * angleStep;
         results.push(new L.Point(centerPt.x + legLength * Math.cos(angle), centerPt.y + legLength * Math.sin(angle)));
       }
       return results;
