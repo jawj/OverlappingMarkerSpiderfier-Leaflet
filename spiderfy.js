@@ -2,73 +2,46 @@
 (function() {
   'use strict';
 
-  /** @preserve OverlappingMarkerSpiderfier
+  /** @preserve Spiderfy
   https://github.com/jawj/OverlappingMarkerSpiderfier-Leaflet
   Copyright (c) 2011 - 2012 George MacKerron
   Released under the MIT licence: http://opensource.org/licenses/mit-license
   Note: The Leaflet maps API must be included *before* this code
    */
-  var extend,
+  var cleanExtend, extend,
     slice = [].slice;
 
   if (this.L == null) {
     return;
   }
 
-  this.OverlappingMarkerSpiderfier = (function() {
-    var defaultOpts, p, twoPi;
-
-    p = OverlappingMarkerSpiderfier.prototype;
-
-    p.VERSION = '0.2.6';
+  this.Spiderfy = (function() {
+    var p, twoPi;
 
     twoPi = Math.PI * 2;
 
-    defaultOpts = {
-      keepSpiderfied: false,
-      nearbyDistance: 20,
-      circleSpiralSwitchover: 9,
-      circleFootSeparation: 25,
-      circleStartAngle: twoPi / 12,
-      spiralFootSeparation: 28,
-      spiralLengthStart: 11,
-      spiralLengthFactor: 5,
-      legWeight: 1.5,
-      legColors: {
-        usual: '#222',
-        highlighted: '#f00'
-      },
-      unspiderfyEvents: ['click', 'zoomend'],
-      spiderfyMarkerEvent: 'click',
-      body: {
-        color: '#222',
-        radius: 3,
-        opacity: 0.9,
-        fillOpacity: 0.9
-      }
-    };
-
-    function OverlappingMarkerSpiderfier(map, opts) {
+    function Spiderfy(map1, opts) {
       var e, j, len, ref;
-      this.map = map;
+      this.map = map1;
       if (opts == null) {
         opts = {};
       }
-      extend(this, defaultOpts, opts);
+      extend(this, opts, Spiderfy.defaultOpts);
+      this.enabled = true;
       this.initMarkerArrays();
       this.listeners = {};
-      if (this.unspiderfyEvents && this.unspiderfyEvents.length) {
-        ref = this.unspiderfyEvents;
+      if (this.offEvents && this.offEvents.length) {
+        ref = this.offEvents;
         for (j = 0, len = ref.length; j < len; j++) {
           e = ref[j];
-          this.map.addEventListener(e, (function(_this) {
-            return function() {
-              return _this.unspiderfy();
-            };
-          })(this));
+          this.map.addEventListener(e, this.deactivate.bind(this));
         }
       }
     }
+
+    p = Spiderfy.prototype;
+
+    p.VERSION = '0.2.6';
 
     p.initMarkerArrays = function() {
       this.markers = [];
@@ -77,7 +50,7 @@
     };
 
     p.addMarker = function(marker) {
-      var markerListener;
+      var e, j, len, markerListener, ref;
       if (marker._oms != null) {
         return this;
       }
@@ -87,8 +60,12 @@
           return _this.spiderListener(marker);
         };
       })(this);
-      if (this.spiderfyMarkerEvent && this.spiderfyMarkerEvent.length) {
-        marker.addEventListener(this.spiderfyMarkerEvent, markerListener);
+      if (this.onEvents && this.onEvents.length) {
+        ref = this.onEvents;
+        for (j = 0, len = ref.length; j < len; j++) {
+          e = ref[j];
+          marker.addEventListener(e, markerListener);
+        }
       }
       this.markerListeners.push(markerListener);
       this.markers.push(marker);
@@ -100,17 +77,21 @@
     };
 
     p.removeMarker = function(marker) {
-      var i, markerListener;
-      if (marker._omsData != null) {
-        this.unspiderfy();
+      var e, i, j, len, markerListener, ref;
+      if (marker._spiderfyData != null) {
+        this.deactivate();
       }
       i = this.arrIndexOf(this.markers, marker);
       if (i < 0) {
         return this;
       }
       markerListener = this.markerListeners.splice(i, 1)[0];
-      if (this.spiderfyMarkerEvent && this.spiderfyMarkerEvent.length) {
-        marker.removeEventListener(this.spiderfyMarkerEvent, markerListener);
+      if (this.onEvents && this.onEvents.length) {
+        ref = this.onEvents;
+        for (j = 0, len = ref.length; j < len; j++) {
+          e = ref[j];
+          marker.removeEventListener(e, markerListener);
+        }
       }
       delete marker._oms;
       this.markers.splice(i, 1);
@@ -118,14 +99,18 @@
     };
 
     p.clearMarkers = function() {
-      var i, j, len, marker, markerListener, ref;
-      this.unspiderfy();
+      var e, i, j, k, len, len1, marker, markerListener, ref, ref1;
+      this.deactivate();
       ref = this.markers;
       for (i = j = 0, len = ref.length; j < len; i = ++j) {
         marker = ref[i];
         markerListener = this.markerListeners[i];
-        if (this.spiderfyMarkerEvent && this.spiderfyMarkerEvent.length) {
-          marker.removeEventListener(this.spiderfyMarkerEvent, markerListener);
+        if (this.onEvents && this.onEvents.length) {
+          ref1 = this.onEvents;
+          for (k = 0, len1 = ref1.length; k < len1; k++) {
+            e = ref1[k];
+            marker.removeEventListener(e, markerListener);
+          }
         }
         delete marker._oms;
       }
@@ -166,13 +151,14 @@
     };
 
     p.generatePtsCircle = function(count, centerPt) {
-      var angle, angleStep, circumference, i, j, legLength, ref, results;
+      var angle, angleStep, calculatedStartAngle, circumference, i, j, legLength, ref, results;
       circumference = this.circleFootSeparation * (2 + count);
       legLength = circumference / twoPi;
       angleStep = twoPi / count;
+      calculatedStartAngle = this.circleStartAngle * (Math.PI / 180);
       results = [];
       for (i = j = 0, ref = count; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-        angle = this.circleStartAngle + i * angleStep;
+        angle = calculatedStartAngle + i * angleStep;
         results.push(new L.Point(centerPt.x + legLength * Math.cos(angle), centerPt.y + legLength * Math.sin(angle)));
       }
       return results;
@@ -193,14 +179,14 @@
     };
 
     p.spiderListener = function(marker) {
-      var j, len, m, mPt, markerPt, markerSpiderfied, nearbyMarkerData, nonNearbyMarkers, pxSq, ref;
-      markerSpiderfied = marker._omsData != null;
-      if (!this.keepSpiderfied) {
-        if (!markerSpiderfied) {
-          this.unspiderfy();
+      var active, j, len, m, mPt, markerPt, nearbyMarkerData, nonNearbyMarkers, pxSq, ref;
+      active = marker._spiderfyData != null;
+      if (!this.keep) {
+        if (!active) {
+          this.deactivate();
         }
       }
-      if (markerSpiderfied) {
+      if (active) {
         this.trigger('click', marker);
         return this;
       } else {
@@ -226,8 +212,10 @@
         }
         if (nearbyMarkerData.length === 1) {
           return this.trigger('click', marker);
+        } else if (nearbyMarkerData.length > 0 && nonNearbyMarkers.length > 0) {
+          return this.activate(nearbyMarkerData, nonNearbyMarkers);
         } else {
-          return this.spiderfy(nearbyMarkerData, nonNearbyMarkers);
+          return null;
         }
       }
     };
@@ -236,14 +224,14 @@
       return {
         highlight: (function(_this) {
           return function() {
-            return marker._omsData.leg.setStyle({
+            return marker._spiderfyData.leg.setStyle({
               color: _this.legColors.highlighted
             });
           };
         })(this),
         unhighlight: (function(_this) {
           return function() {
-            return marker._omsData.leg.setStyle({
+            return marker._spiderfyData.leg.setStyle({
               color: _this.legColors.usual
             });
           };
@@ -251,9 +239,12 @@
       };
     };
 
-    p.spiderfy = function(markerData, nonNearbyMarkers) {
-      var body, bodyPt, footLl, footPt, footPts, lastMarkerCoords, leg, marker, markerCoords, md, mhl, nearestMarkerDatum, numFeet, spiderfiedMarkers;
-      this.spiderfying = true;
+    p.activate = function(markerData, nonNearbyMarkers) {
+      var activeMarkers, body, bodyPt, footLl, footPt, footPts, lastMarkerCoords, leg, marker, markerCoords, md, mhl, nearestMarkerDatum, numFeet;
+      if (!this.enabled) {
+        return;
+      }
+      this.activating = true;
       numFeet = markerData.length;
       bodyPt = this.ptAverage((function() {
         var j, len, results;
@@ -266,7 +257,7 @@
       })());
       footPts = numFeet >= this.circleSpiralSwitchover ? this.generatePtsSpiral(numFeet, bodyPt).reverse() : this.generatePtsCircle(numFeet, bodyPt);
       lastMarkerCoords = null;
-      spiderfiedMarkers = (function() {
+      activeMarkers = (function() {
         var j, len, results;
         results = [];
         for (j = 0, len = footPts.length; j < len; j++) {
@@ -286,13 +277,13 @@
             clickable: false
           });
           this.map.addLayer(leg);
-          marker._omsData = {
+          marker._spiderfyData = {
             usualPosition: marker.getLatLng(),
             leg: leg
           };
           if (this.legColors.highlighted !== this.legColors.usual) {
             mhl = this.makeHighlightListeners(marker);
-            marker._omsData.highlightListeners = mhl;
+            marker._spiderfyData.highlightListeners = mhl;
             marker.addEventListener('mouseover', mhl.highlight);
             marker.addEventListener('mouseout', mhl.unhighlight);
           }
@@ -304,45 +295,45 @@
         }
         return results;
       }).call(this);
-      delete this.spiderfying;
-      this.spiderfied = true;
-      if (this.body) {
+      delete this.activating;
+      this.isActive = true;
+      if (this.body && lastMarkerCoords !== null) {
         body = L.circleMarker(lastMarkerCoords, this.body);
         this.map.addLayer(body);
         this.bodies.push(body);
       }
-      return this.trigger('spiderfy', spiderfiedMarkers, nonNearbyMarkers);
+      return this.trigger('activate', activeMarkers, nonNearbyMarkers);
     };
 
-    p.unspiderfy = function(markerNotToMove) {
-      var body, j, k, len, len1, marker, mhl, nonNearbyMarkers, ref, ref1, unspiderfiedMarkers;
+    p.deactivate = function(markerNotToMove) {
+      var body, inactiveMarkers, j, k, len, len1, marker, mhl, nonNearbyMarkers, ref, ref1;
       if (markerNotToMove == null) {
         markerNotToMove = null;
       }
-      if (this.spiderfied == null) {
+      if (this.isActive == null) {
         return this;
       }
-      this.unspiderfying = true;
-      unspiderfiedMarkers = [];
+      this.deactivating = true;
+      inactiveMarkers = [];
       nonNearbyMarkers = [];
       ref = this.markers;
       for (j = 0, len = ref.length; j < len; j++) {
         marker = ref[j];
-        if (marker._omsData != null) {
-          this.map.removeLayer(marker._omsData.leg);
+        if (marker._spiderfyData != null) {
+          this.map.removeLayer(marker._spiderfyData.leg);
           if (marker !== markerNotToMove) {
-            marker.setLatLng(marker._omsData.usualPosition);
+            marker.setLatLng(marker._spiderfyData.usualPosition);
           }
           if (marker.hasOwnProperty('setZIndexOffset')) {
             marker.setZIndexOffset(0);
           }
-          mhl = marker._omsData.highlightListeners;
+          mhl = marker._spiderfyData.highlightListeners;
           if (mhl != null) {
             marker.removeEventListener('mouseover', mhl.highlight);
             marker.removeEventListener('mouseout', mhl.unhighlight);
           }
-          delete marker._omsData;
-          unspiderfiedMarkers.push(marker);
+          delete marker._spiderfyData;
+          inactiveMarkers.push(marker);
         } else {
           nonNearbyMarkers.push(marker);
         }
@@ -352,9 +343,9 @@
         body = ref1[k];
         this.map.removeLayer(body);
       }
-      delete this.unspiderfying;
-      delete this.spiderfied;
-      this.trigger('unspiderfy', unspiderfiedMarkers, nonNearbyMarkers);
+      delete this.deactivating;
+      delete this.isActive;
+      this.trigger('deactivate', inactiveMarkers, nonNearbyMarkers);
       return this;
     };
 
@@ -405,9 +396,48 @@
       return -1;
     };
 
-    return OverlappingMarkerSpiderfier;
+    p.enable = function() {
+      this.enabled = true;
+      return this;
+    };
+
+    p.disable = function() {
+      this.enabled = false;
+      return this;
+    };
+
+    return Spiderfy;
 
   })();
+
+  this.Spiderfy.defaultOpts = {
+    keep: false,
+    nearbyDistance: 20,
+    circleSpiralSwitchover: 9,
+    circleFootSeparation: 25,
+    circleStartAngle: 1,
+    spiralFootSeparation: 28,
+    spiralLengthStart: 11,
+    spiralLengthFactor: 5,
+    legWeight: 1.5,
+    legColors: {
+      usual: '#222',
+      highlighted: '#f00'
+    },
+    offEvents: ['click', 'zoomend'],
+    onEvents: ['click'],
+    body: {
+      color: '#222',
+      radius: 3,
+      opacity: 0.9,
+      fillOpacity: 0.9
+    },
+    msg: {
+      buttonEnabled: 'spiderfy enabled - click to disable',
+      buttonDisabled: 'spiderfy disabled - click to enable'
+    },
+    icon: '<svg viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">\n   <g id="2">\n     <g id="1">\n       <circle cy="60" r="20"/>\n       <path d="M 0,0 v 60" stroke="black" stroke-width="10"/>\n     </g>\n     <use xlink:href="#1" transform="scale(-1)"/>\n   </g>\n   <use xlink:href="#2" transform="rotate(60)"/>\n  <use xlink:href="#2" transform="rotate(-60)"/>\n</svg>'
+  };
 
   extend = function(out) {
     var i, key;
@@ -428,6 +458,81 @@
       i++;
     }
     return out;
+  };
+
+  cleanExtend = function(it, using) {
+    var key, out;
+    out = {};
+    for (key in using) {
+      if (using.hasOwnProperty(key)) {
+        if (it.hasOwnProperty(key)) {
+          out[key] = it[key];
+        } else {
+          out[key] = value;
+        }
+      }
+    }
+    return out;
+  };
+
+  L.Spiderfy = L.Control.extend({
+    options: extend({
+      position: 'topleft',
+      markers: [],
+      click: null,
+      activate: null,
+      deactivate: null
+    }, Spiderfy.defaultOpts),
+    onAdd: function(map) {
+      var _spiderfy, active, button, buttonDisabled, buttonEnabled, j, len, marker, ref, style;
+      _spiderfy = new Spiderfy(map, cleanExtend(this.options, Spiderfy.defaultOpts));
+      if (this.options.click) {
+        _spiderfy.addListener('click', this.options.click);
+      }
+      if (this.options.activate) {
+        _spiderfy.addListener('activate', this.options.activate);
+      }
+      if (this.options.deactivate) {
+        _spiderfy.addListener('deactivate', this.options.deactivate);
+      }
+      active = true;
+      buttonEnabled = this.options.msg.buttonEnabled;
+      buttonDisabled = this.options.msg.buttonDisabled;
+      button = L.DomUtil.create('a', 'leaflet-bar leaflet-control leaflet-control-spiderfy');
+      button.setAttribute('href', '#');
+      button.setAttribute('title', buttonEnabled);
+      button.innerHTML = this.options.icon;
+      style = button.style;
+      style.backgroundColor = 'white';
+      style.width = '30px';
+      style.height = '30px';
+      ref = this.options.markers;
+      for (j = 0, len = ref.length; j < len; j++) {
+        marker = ref[j];
+        _spiderfy.addMarker(marker);
+      }
+      button.onclick = function() {
+        if (active) {
+          active = false;
+          button.setAttribute('title', buttonDisabled);
+          style.opacity = 0.5;
+          return _spiderfy.deactivate().disable();
+        } else {
+          active = true;
+          button.setAttribute('title', buttonEnabled);
+          style.opacity = 1;
+          return _spiderfy.enable();
+        }
+      };
+      return button;
+    }
+  });
+
+  L.spiderfy = function(options) {
+    var spiderfy;
+    spiderfy = new L.Spiderfy(options);
+    map.addControl(spiderfy);
+    return spiderfy;
   };
 
 }).call(this);
