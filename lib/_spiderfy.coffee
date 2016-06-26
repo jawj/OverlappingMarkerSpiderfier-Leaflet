@@ -1,5 +1,5 @@
 'use strict'
-###* @preserve OverlappingMarkerSpiderfier
+###* @preserve Spiderfy
 https://github.com/jawj/OverlappingMarkerSpiderfier-Leaflet
 Copyright (c) 2011 - 2012 George MacKerron
 Released under the MIT licence: http://opensource.org/licenses/mit-license
@@ -8,45 +8,23 @@ Note: The Leaflet maps API must be included *before* this code
 
 # NB. string literal properties -- object.key -- are for Closure Compiler ADVANCED_OPTIMIZATION
 
-return unless this.L?  # return from wrapper func without doing anything
+return unless @L?  # return from wrapper func without doing anything
 
-class @OverlappingMarkerSpiderfier
-  p = @::  # this saves a lot of repetition of .prototype that isn't optimized away
-  p.VERSION = '0.2.6'
+class @Spiderfy
   twoPi = Math.PI * 2
-
-  defaultOpts =
-    keepSpiderfied: no           # yes -> don't unspiderfy when a marker is selected
-    nearbyDistance: 20           # spiderfy markers within this range of the one clicked, in px
-  
-    circleSpiralSwitchover: 9    # show spiral instead of circle from this marker count upwards
-                                     # 0 -> always spiral; Infinity -> always circle
-    circleFootSeparation: 25     # related to circumference of circle
-    circleStartAngle: 1
-    spiralFootSeparation: 28     # related to size of spiral (experiment!)
-    spiralLengthStart: 11        # ditto
-    spiralLengthFactor: 5        # ditto
-   
-    legWeight: 1.5
-    legColors:
-      usual: '#222'
-      highlighted: '#f00'
-    unspiderfyEvents: ['click', 'zoomend']
-    spiderfyMarkerEvent: 'click'
-    body:
-      color: '#222'
-      radius: 3
-      opacity: 0.9
-      fillOpacity: 0.9
 
   # Note: it's OK that this constructor comes after the properties, because of function hoisting
   constructor: (@map, opts = {}) ->
-    extend(@, defaultOpts, opts)
+    extend(@, opts, Spiderfy.defaultOpts)
+    @enabled = yes
     @initMarkerArrays()
     @listeners = {}
-    if @unspiderfyEvents && @unspiderfyEvents.length
-      @map.addEventListener(e, => @unspiderfy()) for e in @unspiderfyEvents
-    
+    if @offEvents && @offEvents.length
+      for e in @offEvents
+        @map.addEventListener(e, @deactivate.bind(this))
+
+  p = @::  # this saves a lot of repetition of .prototype that isn't optimized away
+  p.VERSION = '0.2.6'
   p.initMarkerArrays = ->
     @markers = []
     @markerListeners = []
@@ -55,9 +33,10 @@ class @OverlappingMarkerSpiderfier
   p.addMarker = (marker) ->
     return @ if marker._oms?
     marker._oms = yes
-    markerListener = => @spiderListener(marker)
-    if @spiderfyMarkerEvent && @spiderfyMarkerEvent.length
-      marker.addEventListener(@spiderfyMarkerEvent, markerListener)
+    markerListener = () => @spiderListener(marker)
+    if @onEvents && @onEvents.length
+      for e in @onEvents
+        marker.addEventListener(e, markerListener)
     @markerListeners.push(markerListener)
     @markers.push(marker)
     @  # return self, for chaining
@@ -65,27 +44,29 @@ class @OverlappingMarkerSpiderfier
   p.getMarkers = -> @markers[0..]  # returns a copy, so no funny business
 
   p.removeMarker = (marker) ->
-    @unspiderfy() if marker._omsData?  # otherwise it'll be stuck there forever!
+    @deactivate() if marker._spiderfyData?  # otherwise it'll be stuck there forever!
     i = @arrIndexOf(@markers, marker)
     return @ if i < 0
     markerListener = @markerListeners.splice(i, 1)[0]
-    if @spiderfyMarkerEvent && @spiderfyMarkerEvent.length
-      marker.removeEventListener(@spiderfyMarkerEvent, markerListener)
+    if @onEvents && @onEvents.length
+      for e in @onEvents
+        marker.removeEventListener(e, markerListener)
     delete marker._oms
     @markers.splice(i, 1)
     @  # return self, for chaining
     
   p.clearMarkers = ->
-    @unspiderfy()
+    @deactivate()
     for marker, i in @markers
       markerListener = @markerListeners[i]
-      if @spiderfyMarkerEvent && @spiderfyMarkerEvent.length
-        marker.removeEventListener(@spiderfyMarkerEvent, markerListener)
+      if @onEvents && @onEvents.length
+        for e in @onEvents
+          marker.removeEventListener(e, markerListener)
       delete marker._oms
     @initMarkerArrays()
     @  # return self, for chaining
         
-  # available listeners: click(marker), spiderfy(markers), unspiderfy(markers)
+  # available listeners: click(marker), activate(markers), deactivate(markers)
   p.addListener = (event, func) ->
     (@listeners[event] ?= []).push(func)
     @  # return self, for chaining
@@ -123,10 +104,10 @@ class @OverlappingMarkerSpiderfier
       pt
   
   p.spiderListener = (marker) ->
-    markerSpiderfied = marker._omsData?
-    if !@keepSpiderfied
-      @unspiderfy() unless markerSpiderfied
-    if markerSpiderfied
+    active = marker._spiderfyData?
+    if !@keep
+      @deactivate() unless active
+    if active
       @trigger('click', marker)
       return @
     else
@@ -144,16 +125,17 @@ class @OverlappingMarkerSpiderfier
       if nearbyMarkerData.length is 1  # 1 => the one clicked => none nearby
         @trigger('click', marker)
       else if (nearbyMarkerData.length > 0 && nonNearbyMarkers.length > 0)
-        @spiderfy(nearbyMarkerData, nonNearbyMarkers)
+        @activate(nearbyMarkerData, nonNearbyMarkers)
       else
         null
   
   p.makeHighlightListeners = (marker) ->
-    highlight:   => marker._omsData.leg.setStyle(color: @legColors.highlighted)
-    unhighlight: => marker._omsData.leg.setStyle(color: @legColors.usual)
+    highlight:   => marker._spiderfyData.leg.setStyle(color: @legColors.highlighted)
+    unhighlight: => marker._spiderfyData.leg.setStyle(color: @legColors.usual)
   
-  p.spiderfy = (markerData, nonNearbyMarkers) ->
-    @spiderfying = yes
+  p.activate = (markerData, nonNearbyMarkers) ->
+    return unless @enabled
+    @activating = yes
     numFeet = markerData.length
     bodyPt = @ptAverage(md.markerPt for md in markerData)
     footPts = if numFeet >= @circleSpiralSwitchover
@@ -161,7 +143,7 @@ class @OverlappingMarkerSpiderfier
     else
       @generatePtsCircle(numFeet, bodyPt)
     lastMarkerCoords = null
-    spiderfiedMarkers = for footPt in footPts
+    activeMarkers = for footPt in footPts
       footLl = @map.layerPointToLatLng(footPt)
       nearestMarkerDatum = @minExtract(markerData, (md) => @ptDistanceSq(md.markerPt, footPt))
       marker = nearestMarkerDatum.marker
@@ -173,50 +155,50 @@ class @OverlappingMarkerSpiderfier
         clickable: no
       }
       @map.addLayer(leg)
-      marker._omsData = {usualPosition: marker.getLatLng(), leg: leg}
+      marker._spiderfyData = {usualPosition: marker.getLatLng(), leg: leg}
       unless @legColors.highlighted is @legColors.usual
         mhl = @makeHighlightListeners(marker)
-        marker._omsData.highlightListeners = mhl
+        marker._spiderfyData.highlightListeners = mhl
         marker.addEventListener('mouseover', mhl.highlight)
         marker.addEventListener('mouseout',  mhl.unhighlight)
       marker.setLatLng(footLl)
       if marker.hasOwnProperty('setZIndexOffset')
         marker.setZIndexOffset(1000000)
       marker
-    delete @spiderfying
-    @spiderfied = yes
+    delete @activating
+    @isActive = yes
     if @body && lastMarkerCoords != null
       body = L.circleMarker(lastMarkerCoords, @body)
       @map.addLayer(body)
       @bodies.push(body)
-    @trigger('spiderfy', spiderfiedMarkers, nonNearbyMarkers)
+    @trigger('activate', activeMarkers, nonNearbyMarkers)
   
-  p.unspiderfy = (markerNotToMove = null) ->
-    return @ unless @spiderfied?
-    @unspiderfying = yes
-    unspiderfiedMarkers = []
+  p.deactivate = (markerNotToMove = null) ->
+    return @ unless @isActive?
+    @deactivating = yes
+    inactiveMarkers = []
     nonNearbyMarkers = []
     for marker in @markers
-      if marker._omsData?
-        @map.removeLayer(marker._omsData.leg)
-        marker.setLatLng(marker._omsData.usualPosition) unless marker is markerNotToMove
+      if marker._spiderfyData?
+        @map.removeLayer(marker._spiderfyData.leg)
+        marker.setLatLng(marker._spiderfyData.usualPosition) unless marker is markerNotToMove
         if marker.hasOwnProperty('setZIndexOffset')
           marker.setZIndexOffset(0)
-        mhl = marker._omsData.highlightListeners
+        mhl = marker._spiderfyData.highlightListeners
         if mhl?
           marker.removeEventListener('mouseover', mhl.highlight)
           marker.removeEventListener('mouseout',  mhl.unhighlight)
-        delete marker._omsData
-        unspiderfiedMarkers.push(marker)
+        delete marker._spiderfyData
+        inactiveMarkers.push(marker)
       else
         nonNearbyMarkers.push(marker)
 
     for body in @bodies
       @map.removeLayer(body)
 
-    delete @unspiderfying
-    delete @spiderfied
-    @trigger('unspiderfy', unspiderfiedMarkers, nonNearbyMarkers)
+    delete @deactivating
+    delete @isActive
+    @trigger('deactivate', inactiveMarkers, nonNearbyMarkers)
     @  # return self, for chaining
   
   p.ptDistanceSq = (pt1, pt2) -> 
@@ -244,6 +226,52 @@ class @OverlappingMarkerSpiderfier
     return arr.indexOf(obj) if arr.indexOf?
     (return i if o is obj) for o, i in arr
     -1
+  p.enable = () ->
+    @enabled = yes
+    @
+  p.disable = () ->
+    @enabled = no
+    @
+
+@Spiderfy.defaultOpts =
+  keep: no                     # yes -> don't deactivate when a marker is selected
+  nearbyDistance: 20           # spiderfy markers within this range of the one clicked, in px
+
+  circleSpiralSwitchover: 9    # show spiral instead of circle from this marker count upwards
+  # 0 -> always spiral; Infinity -> always circle
+  circleFootSeparation: 25     # related to circumference of circle
+  circleStartAngle: 1
+  spiralFootSeparation: 28     # related to size of spiral (experiment!)
+  spiralLengthStart: 11        # ditto
+  spiralLengthFactor: 5        # ditto
+
+  legWeight: 1.5
+  legColors:
+    usual: '#222'
+    highlighted: '#f00'
+  offEvents: ['click', 'zoomend']
+  onEvents: ['click']
+  body:
+    color: '#222'
+    radius: 3
+    opacity: 0.9
+    fillOpacity: 0.9
+  msg:
+    buttonEnabled: 'spiderfy enabled - click to disable'
+    buttonDisabled: 'spiderfy disabled - click to enable'
+  icon: '''
+    <svg viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+       <g id="2">
+         <g id="1">
+           <circle cy="60" r="20"/>
+           <path d="M 0,0 v 60" stroke="black" stroke-width="10"/>
+         </g>
+         <use xlink:href="#1" transform="scale(-1)"/>
+       </g>
+       <use xlink:href="#2" transform="rotate(60)"/>
+      <use xlink:href="#2" transform="rotate(-60)"/>
+    </svg>
+'''
 
 extend = (out = {}) ->
   i = 1
@@ -256,3 +284,64 @@ extend = (out = {}) ->
         out[key] = arguments[i][key]
     i++
   out
+
+cleanExtend = (it, using) ->
+  out = {}
+  for key of using
+    if using.hasOwnProperty(key)
+      if it.hasOwnProperty(key)
+        out[key] = it[key]
+      else
+        out[key] = value
+  out
+
+L.Spiderfy = L.Control.extend(
+  options: extend(
+      position: 'topleft'
+      markers: []
+      click: null
+      activate: null
+      deactivate: null
+    Spiderfy.defaultOpts),
+  onAdd: (map) ->
+    _spiderfy = new Spiderfy(map, cleanExtend(@options, Spiderfy.defaultOpts))
+    if @options.click
+      _spiderfy.addListener('click', @options.click)
+    if @options.activate
+      _spiderfy.addListener('activate', @options.activate)
+    if @options.deactivate
+      _spiderfy.addListener('deactivate', @options.deactivate)
+    active = yes
+    buttonEnabled = @options.msg.buttonEnabled
+    buttonDisabled = @options.msg.buttonDisabled
+    button = L.DomUtil.create('a', 'leaflet-bar leaflet-control leaflet-control-spiderfy')
+    button.setAttribute('href', '#')
+    button.setAttribute('title', buttonEnabled)
+    button.innerHTML = @options.icon
+    style = button.style
+    style.backgroundColor = 'white'
+    style.width = '30px'
+    style.height = '30px'
+    for marker in @options.markers
+      _spiderfy.addMarker(marker)
+    button.onclick = () ->
+      if (active)
+        active = no
+        button.setAttribute('title', buttonDisabled)
+        style.opacity = 0.5
+        _spiderfy
+          .deactivate()
+          .disable()
+      else
+        active = yes
+        button.setAttribute('title', buttonEnabled)
+        style.opacity = 1
+        _spiderfy
+          .enable()
+    button
+)
+
+L.spiderfy = (options) ->
+  spiderfy = new L.Spiderfy(options)
+  map.addControl(spiderfy)
+  spiderfy
