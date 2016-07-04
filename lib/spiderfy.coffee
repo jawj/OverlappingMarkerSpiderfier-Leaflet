@@ -381,7 +381,7 @@ p.makeHighlightListeners = (marker) ->
   @_spiderfy.makeHighlightListeners(marker)
   @
 p.activate = (markerData, nonNearbyMarkers) ->
-  @_spiderfy(markerData, nonNearbyMarkers)
+  @_spiderfy.activate(markerData, nonNearbyMarkers)
   @
 p.deactivate = (markerNotToMove = null) ->
   @_spiderfy.deactivate(markerNotToMove)

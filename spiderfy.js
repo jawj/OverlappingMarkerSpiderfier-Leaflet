@@ -598,7 +598,7 @@
   };
 
   p.activate = function(markerData, nonNearbyMarkers) {
-    this._spiderfy(markerData, nonNearbyMarkers);
+    this._spiderfy.activate(markerData, nonNearbyMarkers);
     return this;
   };
 
