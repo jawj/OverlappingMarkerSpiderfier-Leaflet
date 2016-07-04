@@ -448,6 +448,8 @@
       click: null,
       activate: null,
       deactivate: null,
+      enable: null,
+      disable: null,
       keep: defaults.keep,
       nearbyDistance: defaults.nearbyDistance,
       circleSpiralSwitchover: defaults.circleSpiralSwitchover,
@@ -497,12 +499,18 @@
           active = false;
           button.setAttribute('title', buttonDisabled);
           style.opacity = 0.5;
-          return _spiderfy.deactivate().disable();
+          _spiderfy.deactivate().disable();
+          if (this.options.disable) {
+            return this.options.disable();
+          }
         } else {
           active = true;
           button.setAttribute('title', buttonEnabled);
           style.opacity = 1;
-          return _spiderfy.enable();
+          _spiderfy.enable();
+          if (this.options.enable) {
+            return this.options.enable();
+          }
         }
       };
       return button;

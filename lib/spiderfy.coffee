@@ -281,6 +281,8 @@ L.Spiderfy = L.Control.extend(
     click: null
     activate: null
     deactivate: null
+    enable: null
+    disable: null
     keep: defaults.keep
     nearbyDistance: defaults.nearbyDistance
     circleSpiralSwitchover: defaults.circleSpiralSwitchover
@@ -325,12 +327,18 @@ L.Spiderfy = L.Control.extend(
         _spiderfy
           .deactivate()
           .disable()
+
+        if @options.disable
+          @options.disable()
       else
         active = yes
         button.setAttribute('title', buttonEnabled)
         style.opacity = 1
         _spiderfy
           .enable()
+
+        if @options.enable
+          @options.enable()
     button
 )
 p = L.Spiderfy.prototype;
