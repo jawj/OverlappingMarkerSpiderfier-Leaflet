@@ -8,7 +8,7 @@
   Released under the MIT licence: http://opensource.org/licenses/mit-license
   Note: The Leaflet maps API must be included *before* this code
    */
-  var VERSION, cleanExtend, extend, p,
+  var VERSION, defaults, p,
     slice = [].slice;
 
   if (this.L == null) {
@@ -21,12 +21,14 @@
     twoPi = Math.PI * 2;
 
     function Spiderfy(map1, opts) {
-      var e, j, len, ref;
+      var e, j, key, len, ref;
       this.map = map1;
       if (opts == null) {
         opts = {};
       }
-      extend(this, opts, Spiderfy.defaultOpts);
+      for (key in Spiderfy.defaults) {
+        this[key] = opts.hasOwnProperty(key) ? opts[key] : Spiderfy.defaults[key];
+      }
       this.enabled = true;
       this.initMarkerArrays();
       this.listeners = {};
@@ -57,7 +59,7 @@
       marker._hasSpiderfy = true;
       markerListener = (function(_this) {
         return function() {
-          return activateMarker(marker);
+          return _this.activateMarker(marker);
         };
       })(this);
       if (this.onEvents && this.onEvents.length) {
@@ -410,7 +412,7 @@
 
   })();
 
-  this.Spiderfy.defaultOpts = {
+  defaults = this.Spiderfy.defaults = {
     keep: false,
     nearbyDistance: 20,
     circleSpiralSwitchover: 9,
@@ -439,53 +441,32 @@
     icon: '<svg viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">\n   <g id="2">\n     <g id="1">\n       <circle cy="60" r="20"/>\n       <path d="M 0,0 v 60" stroke="black" stroke-width="10"/>\n     </g>\n     <use xlink:href="#1" transform="scale(-1)"/>\n   </g>\n   <use xlink:href="#2" transform="rotate(60)"/>\n  <use xlink:href="#2" transform="rotate(-60)"/>\n</svg>'
   };
 
-  extend = function(out) {
-    var i, key;
-    if (out == null) {
-      out = {};
-    }
-    i = 1;
-    while (i < arguments.length) {
-      if (!arguments[i]) {
-        i++;
-        continue;
-      }
-      for (key in arguments[i]) {
-        if (arguments[i].hasOwnProperty(key)) {
-          out[key] = arguments[i][key];
-        }
-      }
-      i++;
-    }
-    return out;
-  };
-
-  cleanExtend = function(it, using) {
-    var key, out;
-    out = {};
-    for (key in using) {
-      if (using.hasOwnProperty(key)) {
-        if (it.hasOwnProperty(key)) {
-          out[key] = it[key];
-        } else {
-          out[key] = value;
-        }
-      }
-    }
-    return out;
-  };
-
   L.Spiderfy = L.Control.extend({
-    options: extend({
+    options: {
       position: 'topleft',
       markers: [],
       click: null,
       activate: null,
-      deactivate: null
-    }, Spiderfy.defaultOpts),
+      deactivate: null,
+      keep: defaults.keep,
+      nearbyDistance: defaults.nearbyDistance,
+      circleSpiralSwitchover: defaults.circleSpiralSwitchover,
+      circleFootSeparation: defaults.circleFootSeparation,
+      circleStartAngle: defaults.circleStartAngle,
+      spiralFootSeparation: defaults.spiralFootSeparation,
+      spiralLengthStart: defaults.spiralLengthStart,
+      spiralLengthFactor: defaults.spiralLengthFactor,
+      legWeight: defaults.legWeight,
+      legColors: defaults.legColors,
+      offEvents: defaults.offEvents,
+      onEvents: defaults.onEvents,
+      body: defaults.body,
+      msg: defaults.msg,
+      icon: defaults.icon
+    },
     onAdd: function(map) {
       var _spiderfy, active, button, buttonDisabled, buttonEnabled, j, len, marker, ref, style;
-      _spiderfy = this._spiderfy = new Spiderfy(map, cleanExtend(this.options, Spiderfy.defaultOpts));
+      _spiderfy = this._spiderfy = new Spiderfy(map, this.options);
       if (this.options.click) {
         _spiderfy.addListener('click', this.options.click);
       }

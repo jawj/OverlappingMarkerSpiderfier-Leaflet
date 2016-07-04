@@ -15,7 +15,8 @@ class @Spiderfy
 
   # Note: it's OK that this constructor comes after the properties, because of function hoisting
   constructor: (@map, opts = {}) ->
-    extend(@, opts, Spiderfy.defaultOpts)
+    for key of Spiderfy.defaults
+      @[key] = if opts.hasOwnProperty(key) then opts[key] else Spiderfy.defaults[key]
     @enabled = yes
     @initMarkerArrays()
     @listeners = {}
@@ -33,7 +34,7 @@ class @Spiderfy
   p.addMarker = (marker) ->
     return @ if marker._hasSpiderfy?
     marker._hasSpiderfy = yes
-    markerListener = () => activateMarker(marker)
+    markerListener = () => @activateMarker(marker)
     if @onEvents && @onEvents.length
       for e in @onEvents
         marker.addEventListener(e, markerListener)
@@ -233,7 +234,7 @@ class @Spiderfy
     @enabled = no
     @
 
-@Spiderfy.defaultOpts =
+defaults = @Spiderfy.defaults =
   keep: no                     # yes -> don't deactivate when a marker is selected
   nearbyDistance: 20           # spiderfy markers within this range of the one clicked, in px
 
@@ -273,38 +274,30 @@ class @Spiderfy
     </svg>
 '''
 
-extend = (out = {}) ->
-  i = 1
-  while i < arguments.length
-    if !arguments[i]
-      i++
-      continue
-    for key of arguments[i]
-      if arguments[i].hasOwnProperty(key)
-        out[key] = arguments[i][key]
-    i++
-  out
-
-cleanExtend = (it, using) ->
-  out = {}
-  for key of using
-    if using.hasOwnProperty(key)
-      if it.hasOwnProperty(key)
-        out[key] = it[key]
-      else
-        out[key] = value
-  out
-
 L.Spiderfy = L.Control.extend(
-  options: extend(
-      position: 'topleft'
-      markers: []
-      click: null
-      activate: null
-      deactivate: null
-    Spiderfy.defaultOpts),
+  options:
+    position: 'topleft'
+    markers: []
+    click: null
+    activate: null
+    deactivate: null
+    keep: defaults.keep
+    nearbyDistance: defaults.nearbyDistance
+    circleSpiralSwitchover: defaults.circleSpiralSwitchover
+    circleFootSeparation: defaults.circleFootSeparation
+    circleStartAngle: defaults.circleStartAngle
+    spiralFootSeparation: defaults.spiralFootSeparation
+    spiralLengthStart: defaults.spiralLengthStart
+    spiralLengthFactor: defaults.spiralLengthFactor
+    legWeight: defaults.legWeight
+    legColors: defaults.legColors
+    offEvents: defaults.offEvents
+    onEvents: defaults.onEvents
+    body: defaults.body
+    msg: defaults.msg
+    icon: defaults.icon
   onAdd: (map) ->
-    _spiderfy = this._spiderfy = new Spiderfy(map, cleanExtend(@options, Spiderfy.defaultOpts))
+    _spiderfy = this._spiderfy = new Spiderfy(map, @options)
     if @options.click
       _spiderfy.addListener('click', @options.click)
     if @options.activate
