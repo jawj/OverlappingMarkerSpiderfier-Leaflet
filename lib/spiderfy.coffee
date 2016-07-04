@@ -33,7 +33,7 @@ class @Spiderfy
   p.addMarker = (marker) ->
     return @ if marker._hasSpiderfy?
     marker._hasSpiderfy = yes
-    markerListener = () => @spiderListener(marker)
+    markerListener = () => activateMarker(marker)
     if @onEvents && @onEvents.length
       for e in @onEvents
         marker.addEventListener(e, markerListener)
@@ -103,7 +103,7 @@ class @Spiderfy
       legLength += twoPi * @spiralLengthFactor / angle
       pt
 
-  p.spiderListener = (marker) ->
+  p.activateMarker = (marker) ->
     active = marker._spiderfyData?
     if !@keep
       @deactivate() unless active
@@ -374,8 +374,8 @@ p.generatePtsCircle = (count, centerPt) ->
   @
 p.generatePtsSpiral = (count, centerPt) ->
   @_spiderfy.generatePtsSpiral(count, centerPt)
-p.spiderListener = (marker) ->
-  @_spiderfy.spiderListener(marker)
+p.activateMarker = (marker) ->
+  @_spiderfy.activateMarker(marker)
   @
 p.makeHighlightListeners = (marker) ->
   @_spiderfy.makeHighlightListeners(marker)

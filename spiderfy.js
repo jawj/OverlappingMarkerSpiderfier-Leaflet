@@ -57,7 +57,7 @@
       marker._hasSpiderfy = true;
       markerListener = (function(_this) {
         return function() {
-          return _this.spiderListener(marker);
+          return activateMarker(marker);
         };
       })(this);
       if (this.onEvents && this.onEvents.length) {
@@ -178,7 +178,7 @@
       return results;
     };
 
-    p.spiderListener = function(marker) {
+    p.activateMarker = function(marker) {
       var active, j, len, m, mPt, markerPt, nearbyMarkerData, nonNearbyMarkers, pxSq, ref;
       active = marker._spiderfyData != null;
       if (!this.keep) {
@@ -587,8 +587,8 @@
     return this._spiderfy.generatePtsSpiral(count, centerPt);
   };
 
-  p.spiderListener = function(marker) {
-    this._spiderfy.spiderListener(marker);
+  p.activateMarker = function(marker) {
+    this._spiderfy.activateMarker(marker);
     return this;
   };
 
