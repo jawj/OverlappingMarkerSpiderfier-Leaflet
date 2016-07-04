@@ -339,66 +339,67 @@ L.Spiderfy = L.Control.extend(
         _spiderfy
           .enable()
     button
-  # expose methods from Spiderfy class
-  VERSION = Spiderfy.prototype.VERSION
-  initMarkerArrays = ->
-    @_spiderfy.initMarkerArrays()
-    @
-  addMarker = (marker) ->
-    @_spiderfy.addMarker(marker)
-    @
-  getMarkers = ->
-    @_spiderfy.getMarkers()
-  removeMarker = (marker) ->
-    @_spiderfy.removeMarker(marker)
-    @
-  clearMarkers = ->
-    @_spiderfy.clearMarkers()
-    @
-  addListener = (event, func) ->
-    @_spiderfy.addListener(event, func)
-    @
-  removeListener = (event, func) ->
-    @_spiderfy.removeListener(event, func)
-    @
-  clearListeners = (event) ->
-    @_spiderfy.clearListeners(event)
-    @
-  trigger = (event, args...) ->
-    @_spiderfy.trigger(event, args)
-    @
-  generatePtsCircle = (count, centerPt) ->
-    @_spiderfy.generatePtsCircle(count, centerPt)
-    @
-  generatePtsSpiral = (count, centerPt) ->
-    @_spiderfy.generatePtsSpiral(count, centerPt)
-  spiderListener = (marker) ->
-    @_spiderfy.spiderListener(marker)
-    @
-  makeHighlightListeners = (marker) ->
-    @_spiderfy.makeHighlightListeners(marker)
-    @
-  activate = (markerData, nonNearbyMarkers) ->
-    @_spiderfy(markerData, nonNearbyMarkers)
-    @
-  deactivate = (markerNotToMove = null) ->
-    @_spiderfy.deactivate(markerNotToMove)
-    @
-  ptDistanceSq = (pt1, pt2) ->
-    @_spiderfy.ptDistanceSq(pt1, pt2)
-  ptAverage = (pts) ->
-    @_spiderfy.ptAverage(pts)
-  minExtract = (set, func) ->
-    @_spiderfy.minExtract(set, func)
-  arrIndexOf = (arr, obj) ->
-    @_spiderfy.arrIndexOf(arr, obj);
-  enable = ->
-    @_spiderfy.enable()
-    @
-  disable = ->
-    @_spiderfy.disable()
-    @
 )
+p = L.Spiderfy.prototype;
+# expose methods from Spiderfy class
+VERSION = Spiderfy.prototype.VERSION
+p.initMarkerArrays = ->
+  @_spiderfy.initMarkerArrays()
+  @
+p.addMarker = (marker) ->
+  @_spiderfy.addMarker(marker)
+  @
+p.getMarkers = ->
+  @_spiderfy.getMarkers()
+p.removeMarker = (marker) ->
+  @_spiderfy.removeMarker(marker)
+  @
+p.clearMarkers = ->
+  @_spiderfy.clearMarkers()
+  @
+p.addListener = (event, func) ->
+  @_spiderfy.addListener(event, func)
+  @
+p.removeListener = (event, func) ->
+  @_spiderfy.removeListener(event, func)
+  @
+p.clearListeners = (event) ->
+  @_spiderfy.clearListeners(event)
+  @
+p.trigger = (event, args...) ->
+  @_spiderfy.trigger(event, args)
+  @
+p.generatePtsCircle = (count, centerPt) ->
+  @_spiderfy.generatePtsCircle(count, centerPt)
+  @
+p.generatePtsSpiral = (count, centerPt) ->
+  @_spiderfy.generatePtsSpiral(count, centerPt)
+p.spiderListener = (marker) ->
+  @_spiderfy.spiderListener(marker)
+  @
+p.makeHighlightListeners = (marker) ->
+  @_spiderfy.makeHighlightListeners(marker)
+  @
+p.activate = (markerData, nonNearbyMarkers) ->
+  @_spiderfy(markerData, nonNearbyMarkers)
+  @
+p.deactivate = (markerNotToMove = null) ->
+  @_spiderfy.deactivate(markerNotToMove)
+  @
+p.ptDistanceSq = (pt1, pt2) ->
+  @_spiderfy.ptDistanceSq(pt1, pt2)
+p.ptAverage = (pts) ->
+  @_spiderfy.ptAverage(pts)
+p.minExtract = (set, func) ->
+  @_spiderfy.minExtract(set, func)
+p.arrIndexOf = (arr, obj) ->
+  @_spiderfy.arrIndexOf(arr, obj);
+p.enable = ->
+  @_spiderfy.enable()
+  @
+p.disable = ->
+  @_spiderfy.disable()
+  @
 
 L.spiderfy = (options) ->
   spiderfy = new L.Spiderfy(options)

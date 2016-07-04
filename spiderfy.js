@@ -8,7 +8,7 @@
   Released under the MIT licence: http://opensource.org/licenses/mit-license
   Note: The Leaflet maps API must be included *before* this code
    */
-  var VERSION, activate, addListener, addMarker, arrIndexOf, cleanExtend, clearListeners, clearMarkers, deactivate, disable, enable, extend, generatePtsCircle, generatePtsSpiral, getMarkers, initMarkerArrays, makeHighlightListeners, minExtract, ptAverage, ptDistanceSq, removeListener, removeMarker, spiderListener, trigger,
+  var VERSION, cleanExtend, extend, p,
     slice = [].slice;
 
   if (this.L == null) {
@@ -526,69 +526,115 @@
       };
       return button;
     }
-  }, VERSION = Spiderfy.prototype.VERSION, initMarkerArrays = function() {
+  });
+
+  p = L.Spiderfy.prototype;
+
+  VERSION = Spiderfy.prototype.VERSION;
+
+  p.initMarkerArrays = function() {
     this._spiderfy.initMarkerArrays();
     return this;
-  }, addMarker = function(marker) {
+  };
+
+  p.addMarker = function(marker) {
     this._spiderfy.addMarker(marker);
     return this;
-  }, getMarkers = function() {
+  };
+
+  p.getMarkers = function() {
     return this._spiderfy.getMarkers();
-  }, removeMarker = function(marker) {
+  };
+
+  p.removeMarker = function(marker) {
     this._spiderfy.removeMarker(marker);
     return this;
-  }, clearMarkers = function() {
+  };
+
+  p.clearMarkers = function() {
     this._spiderfy.clearMarkers();
     return this;
-  }, addListener = function(event, func) {
+  };
+
+  p.addListener = function(event, func) {
     this._spiderfy.addListener(event, func);
     return this;
-  }, removeListener = function(event, func) {
+  };
+
+  p.removeListener = function(event, func) {
     this._spiderfy.removeListener(event, func);
     return this;
-  }, clearListeners = function(event) {
+  };
+
+  p.clearListeners = function(event) {
     this._spiderfy.clearListeners(event);
     return this;
-  }, trigger = function() {
+  };
+
+  p.trigger = function() {
     var args, event;
     event = arguments[0], args = 2 <= arguments.length ? slice.call(arguments, 1) : [];
     this._spiderfy.trigger(event, args);
     return this;
-  }, generatePtsCircle = function(count, centerPt) {
+  };
+
+  p.generatePtsCircle = function(count, centerPt) {
     this._spiderfy.generatePtsCircle(count, centerPt);
     return this;
-  }, generatePtsSpiral = function(count, centerPt) {
+  };
+
+  p.generatePtsSpiral = function(count, centerPt) {
     return this._spiderfy.generatePtsSpiral(count, centerPt);
-  }, spiderListener = function(marker) {
+  };
+
+  p.spiderListener = function(marker) {
     this._spiderfy.spiderListener(marker);
     return this;
-  }, makeHighlightListeners = function(marker) {
+  };
+
+  p.makeHighlightListeners = function(marker) {
     this._spiderfy.makeHighlightListeners(marker);
     return this;
-  }, activate = function(markerData, nonNearbyMarkers) {
+  };
+
+  p.activate = function(markerData, nonNearbyMarkers) {
     this._spiderfy(markerData, nonNearbyMarkers);
     return this;
-  }, deactivate = function(markerNotToMove) {
+  };
+
+  p.deactivate = function(markerNotToMove) {
     if (markerNotToMove == null) {
       markerNotToMove = null;
     }
     this._spiderfy.deactivate(markerNotToMove);
     return this;
-  }, ptDistanceSq = function(pt1, pt2) {
+  };
+
+  p.ptDistanceSq = function(pt1, pt2) {
     return this._spiderfy.ptDistanceSq(pt1, pt2);
-  }, ptAverage = function(pts) {
+  };
+
+  p.ptAverage = function(pts) {
     return this._spiderfy.ptAverage(pts);
-  }, minExtract = function(set, func) {
+  };
+
+  p.minExtract = function(set, func) {
     return this._spiderfy.minExtract(set, func);
-  }, arrIndexOf = function(arr, obj) {
+  };
+
+  p.arrIndexOf = function(arr, obj) {
     return this._spiderfy.arrIndexOf(arr, obj);
-  }, enable = function() {
+  };
+
+  p.enable = function() {
     this._spiderfy.enable();
     return this;
-  }, disable = function() {
+  };
+
+  p.disable = function() {
     this._spiderfy.disable();
     return this;
-  });
+  };
 
   L.spiderfy = function(options) {
     var spiderfy;
