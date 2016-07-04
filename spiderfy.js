@@ -8,7 +8,7 @@
   Released under the MIT licence: http://opensource.org/licenses/mit-license
   Note: The Leaflet maps API must be included *before* this code
    */
-  var cleanExtend, extend,
+  var VERSION, activate, addListener, addMarker, arrIndexOf, cleanExtend, clearListeners, clearMarkers, deactivate, disable, enable, extend, generatePtsCircle, generatePtsSpiral, getMarkers, initMarkerArrays, makeHighlightListeners, minExtract, ptAverage, ptDistanceSq, removeListener, removeMarker, spiderListener, trigger,
     slice = [].slice;
 
   if (this.L == null) {
@@ -41,7 +41,7 @@
 
     p = Spiderfy.prototype;
 
-    p.VERSION = '0.2.6';
+    p.VERSION = '1.0.0';
 
     p.initMarkerArrays = function() {
       this.markers = [];
@@ -51,10 +51,10 @@
 
     p.addMarker = function(marker) {
       var e, j, len, markerListener, ref;
-      if (marker._oms != null) {
+      if (marker._hasSpiderfy != null) {
         return this;
       }
-      marker._oms = true;
+      marker._hasSpiderfy = true;
       markerListener = (function(_this) {
         return function() {
           return _this.spiderListener(marker);
@@ -93,7 +93,7 @@
           marker.removeEventListener(e, markerListener);
         }
       }
-      delete marker._oms;
+      delete marker._hasSpiderfy;
       this.markers.splice(i, 1);
       return this;
     };
@@ -112,7 +112,7 @@
             marker.removeEventListener(e, markerListener);
           }
         }
-        delete marker._oms;
+        delete marker._hasSpiderfy;
       }
       this.initMarkerArrays();
       return this;
@@ -186,7 +186,7 @@
           this.deactivate();
         }
       }
-      if (active) {
+      if (active || !this.enabled) {
         this.trigger('click', marker);
         return this;
       } else {
@@ -485,7 +485,7 @@
     }, Spiderfy.defaultOpts),
     onAdd: function(map) {
       var _spiderfy, active, button, buttonDisabled, buttonEnabled, j, len, marker, ref, style;
-      _spiderfy = new Spiderfy(map, cleanExtend(this.options, Spiderfy.defaultOpts));
+      _spiderfy = this._spiderfy = new Spiderfy(map, cleanExtend(this.options, Spiderfy.defaultOpts));
       if (this.options.click) {
         _spiderfy.addListener('click', this.options.click);
       }
@@ -526,6 +526,68 @@
       };
       return button;
     }
+  }, VERSION = Spiderfy.prototype.VERSION, initMarkerArrays = function() {
+    this._spiderfy.initMarkerArrays();
+    return this;
+  }, addMarker = function(marker) {
+    this._spiderfy.addMarker(marker);
+    return this;
+  }, getMarkers = function() {
+    return this._spiderfy.getMarkers();
+  }, removeMarker = function(marker) {
+    this._spiderfy.removeMarker(marker);
+    return this;
+  }, clearMarkers = function() {
+    this._spiderfy.clearMarkers();
+    return this;
+  }, addListener = function(event, func) {
+    this._spiderfy.addListener(event, func);
+    return this;
+  }, removeListener = function(event, func) {
+    this._spiderfy.removeListener(event, func);
+    return this;
+  }, clearListeners = function(event) {
+    this._spiderfy.clearListeners(event);
+    return this;
+  }, trigger = function() {
+    var args, event;
+    event = arguments[0], args = 2 <= arguments.length ? slice.call(arguments, 1) : [];
+    this._spiderfy.trigger(event, args);
+    return this;
+  }, generatePtsCircle = function(count, centerPt) {
+    this._spiderfy.generatePtsCircle(count, centerPt);
+    return this;
+  }, generatePtsSpiral = function(count, centerPt) {
+    return this._spiderfy.generatePtsSpiral(count, centerPt);
+  }, spiderListener = function(marker) {
+    this._spiderfy.spiderListener(marker);
+    return this;
+  }, makeHighlightListeners = function(marker) {
+    this._spiderfy.makeHighlightListeners(marker);
+    return this;
+  }, activate = function(markerData, nonNearbyMarkers) {
+    this._spiderfy(markerData, nonNearbyMarkers);
+    return this;
+  }, deactivate = function(markerNotToMove) {
+    if (markerNotToMove == null) {
+      markerNotToMove = null;
+    }
+    this._spiderfy.deactivate(markerNotToMove);
+    return this;
+  }, ptDistanceSq = function(pt1, pt2) {
+    return this._spiderfy.ptDistanceSq(pt1, pt2);
+  }, ptAverage = function(pts) {
+    return this._spiderfy.ptAverage(pts);
+  }, minExtract = function(set, func) {
+    return this._spiderfy.minExtract(set, func);
+  }, arrIndexOf = function(arr, obj) {
+    return this._spiderfy.arrIndexOf(arr, obj);
+  }, enable = function() {
+    this._spiderfy.enable();
+    return this;
+  }, disable = function() {
+    this._spiderfy.disable();
+    return this;
   });
 
   L.spiderfy = function(options) {

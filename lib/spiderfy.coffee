@@ -24,15 +24,15 @@ class @Spiderfy
         @map.addEventListener(e, @deactivate.bind(this))
 
   p = @::  # this saves a lot of repetition of .prototype that isn't optimized away
-  p.VERSION = '0.2.6'
+  p.VERSION = '1.0.0'
   p.initMarkerArrays = ->
     @markers = []
     @markerListeners = []
     @bodies = []
-    
+
   p.addMarker = (marker) ->
-    return @ if marker._oms?
-    marker._oms = yes
+    return @ if marker._hasSpiderfy?
+    marker._hasSpiderfy = yes
     markerListener = () => @spiderListener(marker)
     if @onEvents && @onEvents.length
       for e in @onEvents
@@ -51,10 +51,10 @@ class @Spiderfy
     if @onEvents && @onEvents.length
       for e in @onEvents
         marker.removeEventListener(e, markerListener)
-    delete marker._oms
+    delete marker._hasSpiderfy
     @markers.splice(i, 1)
     @  # return self, for chaining
-    
+
   p.clearMarkers = ->
     @deactivate()
     for marker, i in @markers
@@ -62,27 +62,27 @@ class @Spiderfy
       if @onEvents && @onEvents.length
         for e in @onEvents
           marker.removeEventListener(e, markerListener)
-      delete marker._oms
+      delete marker._hasSpiderfy
     @initMarkerArrays()
     @  # return self, for chaining
-        
+
   # available listeners: click(marker), activate(markers), deactivate(markers)
   p.addListener = (event, func) ->
     (@listeners[event] ?= []).push(func)
     @  # return self, for chaining
-    
+
   p.removeListener = (event, func) ->
     i = @arrIndexOf(@listeners[event], func)
     @listeners[event].splice(i, 1) unless i < 0
     @  # return self, for chaining
-  
+
   p.clearListeners = (event) ->
     @listeners[event] = []
     @  # return self, for chaining
-  
+
   p.trigger = (event, args...) ->
     func(args...) for func in (@listeners[event] ? [])
-  
+
   p.generatePtsCircle = (count, centerPt) ->
     circumference = @circleFootSeparation * (2 + count)
     legLength = circumference / twoPi  # = radius from circumference
@@ -90,24 +90,24 @@ class @Spiderfy
     calculatedStartAngle = @circleStartAngle * (Math.PI / 180)
     for i in [0...count]
       angle = calculatedStartAngle + i * angleStep
-      new L.Point(centerPt.x + legLength * Math.cos(angle), 
+      new L.Point(centerPt.x + legLength * Math.cos(angle),
                   centerPt.y + legLength * Math.sin(angle))
-  
+
   p.generatePtsSpiral = (count, centerPt) ->
     legLength = @spiralLengthStart
     angle = 0
     for i in [0...count]
       angle += @spiralFootSeparation / legLength + i * 0.0005
-      pt = new L.Point(centerPt.x + legLength * Math.cos(angle), 
+      pt = new L.Point(centerPt.x + legLength * Math.cos(angle),
                        centerPt.y + legLength * Math.sin(angle))
       legLength += twoPi * @spiralLengthFactor / angle
       pt
-  
+
   p.spiderListener = (marker) ->
     active = marker._spiderfyData?
     if !@keep
       @deactivate() unless active
-    if active
+    if active or !@enabled
       @trigger('click', marker)
       return @
     else
@@ -128,11 +128,11 @@ class @Spiderfy
         @activate(nearbyMarkerData, nonNearbyMarkers)
       else
         null
-  
+
   p.makeHighlightListeners = (marker) ->
     highlight:   => marker._spiderfyData.leg.setStyle(color: @legColors.highlighted)
     unhighlight: => marker._spiderfyData.leg.setStyle(color: @legColors.usual)
-  
+
   p.activate = (markerData, nonNearbyMarkers) ->
     return unless @enabled
     @activating = yes
@@ -172,7 +172,7 @@ class @Spiderfy
       @map.addLayer(body)
       @bodies.push(body)
     @trigger('activate', activeMarkers, nonNearbyMarkers)
-  
+
   p.deactivate = (markerNotToMove = null) ->
     return @ unless @isActive?
     @deactivating = yes
@@ -200,12 +200,12 @@ class @Spiderfy
     delete @isActive
     @trigger('deactivate', inactiveMarkers, nonNearbyMarkers)
     @  # return self, for chaining
-  
-  p.ptDistanceSq = (pt1, pt2) -> 
+
+  p.ptDistanceSq = (pt1, pt2) ->
     dx = pt1.x - pt2.x
     dy = pt1.y - pt2.y
     dx * dx + dy * dy
-  
+
   p.ptAverage = (pts) ->
     sumX = 0
     sumY = 0
@@ -213,7 +213,7 @@ class @Spiderfy
       sumX += pt.x; sumY += pt.y
     numPts = pts.length
     new L.Point(sumX / numPts, sumY / numPts)
-  
+
   p.minExtract = (set, func) ->  # destructive! returns minimum, and also removes it from the set
     for item, index in set
       val = func(item)
@@ -221,8 +221,8 @@ class @Spiderfy
         bestVal = val
         bestIndex = index
     set.splice(bestIndex, 1)[0]
-    
-  p.arrIndexOf = (arr, obj) -> 
+
+  p.arrIndexOf = (arr, obj) ->
     return arr.indexOf(obj) if arr.indexOf?
     (return i if o is obj) for o, i in arr
     -1
@@ -304,7 +304,7 @@ L.Spiderfy = L.Control.extend(
       deactivate: null
     Spiderfy.defaultOpts),
   onAdd: (map) ->
-    _spiderfy = new Spiderfy(map, cleanExtend(@options, Spiderfy.defaultOpts))
+    _spiderfy = this._spiderfy = new Spiderfy(map, cleanExtend(@options, Spiderfy.defaultOpts))
     if @options.click
       _spiderfy.addListener('click', @options.click)
     if @options.activate
@@ -339,6 +339,65 @@ L.Spiderfy = L.Control.extend(
         _spiderfy
           .enable()
     button
+  # expose methods from Spiderfy class
+  VERSION = Spiderfy.prototype.VERSION
+  initMarkerArrays = ->
+    @_spiderfy.initMarkerArrays()
+    @
+  addMarker = (marker) ->
+    @_spiderfy.addMarker(marker)
+    @
+  getMarkers = ->
+    @_spiderfy.getMarkers()
+  removeMarker = (marker) ->
+    @_spiderfy.removeMarker(marker)
+    @
+  clearMarkers = ->
+    @_spiderfy.clearMarkers()
+    @
+  addListener = (event, func) ->
+    @_spiderfy.addListener(event, func)
+    @
+  removeListener = (event, func) ->
+    @_spiderfy.removeListener(event, func)
+    @
+  clearListeners = (event) ->
+    @_spiderfy.clearListeners(event)
+    @
+  trigger = (event, args...) ->
+    @_spiderfy.trigger(event, args)
+    @
+  generatePtsCircle = (count, centerPt) ->
+    @_spiderfy.generatePtsCircle(count, centerPt)
+    @
+  generatePtsSpiral = (count, centerPt) ->
+    @_spiderfy.generatePtsSpiral(count, centerPt)
+  spiderListener = (marker) ->
+    @_spiderfy.spiderListener(marker)
+    @
+  makeHighlightListeners = (marker) ->
+    @_spiderfy.makeHighlightListeners(marker)
+    @
+  activate = (markerData, nonNearbyMarkers) ->
+    @_spiderfy(markerData, nonNearbyMarkers)
+    @
+  deactivate = (markerNotToMove = null) ->
+    @_spiderfy.deactivate(markerNotToMove)
+    @
+  ptDistanceSq = (pt1, pt2) ->
+    @_spiderfy.ptDistanceSq(pt1, pt2)
+  ptAverage = (pts) ->
+    @_spiderfy.ptAverage(pts)
+  minExtract = (set, func) ->
+    @_spiderfy.minExtract(set, func)
+  arrIndexOf = (arr, obj) ->
+    @_spiderfy.arrIndexOf(arr, obj);
+  enable = ->
+    @_spiderfy.enable()
+    @
+  disable = ->
+    @_spiderfy.disable()
+    @
 )
 
 L.spiderfy = (options) ->
