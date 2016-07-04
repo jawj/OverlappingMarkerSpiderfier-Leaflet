@@ -319,6 +319,14 @@ L.Spiderfy = L.Control.extend(
     style.height = '30px'
     for marker in @options.markers
       _spiderfy.addMarker(marker)
+
+    disableCallback = ->
+      if @options.disable
+        @options.disable()
+    enableCallback = ->
+      if @options.enable
+        @options.enable()
+
     button.onclick = () ->
       if (active)
         active = no
@@ -328,8 +336,7 @@ L.Spiderfy = L.Control.extend(
           .deactivate()
           .disable()
 
-        if @options.disable
-          @options.disable()
+        disableCallback()
       else
         active = yes
         button.setAttribute('title', buttonEnabled)
@@ -337,8 +344,7 @@ L.Spiderfy = L.Control.extend(
         _spiderfy
           .enable()
 
-        if @options.enable
-          @options.enable()
+        enableCallback()
     button
 )
 p = L.Spiderfy.prototype;

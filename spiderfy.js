@@ -467,7 +467,7 @@
       icon: defaults.icon
     },
     onAdd: function(map) {
-      var _spiderfy, active, button, buttonDisabled, buttonEnabled, j, len, marker, ref, style;
+      var _spiderfy, active, button, buttonDisabled, buttonEnabled, disableCallback, enableCallback, j, len, marker, ref, style;
       _spiderfy = this._spiderfy = new Spiderfy(map, this.options);
       if (this.options.click) {
         _spiderfy.addListener('click', this.options.click);
@@ -494,23 +494,29 @@
         marker = ref[j];
         _spiderfy.addMarker(marker);
       }
+      disableCallback = function() {
+        if (this.options.disable) {
+          return this.options.disable();
+        }
+      };
+      enableCallback = function() {
+        if (this.options.enable) {
+          return this.options.enable();
+        }
+      };
       button.onclick = function() {
         if (active) {
           active = false;
           button.setAttribute('title', buttonDisabled);
           style.opacity = 0.5;
           _spiderfy.deactivate().disable();
-          if (this.options.disable) {
-            return this.options.disable();
-          }
+          return disableCallback();
         } else {
           active = true;
           button.setAttribute('title', buttonEnabled);
           style.opacity = 1;
           _spiderfy.enable();
-          if (this.options.enable) {
-            return this.options.enable();
-          }
+          return enableCallback();
         }
       };
       return button;
