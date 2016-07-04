@@ -467,56 +467,51 @@
       icon: defaults.icon
     },
     onAdd: function(map) {
-      var _spiderfy, active, button, buttonDisabled, buttonEnabled, disableCallback, enableCallback, j, len, marker, ref, style;
-      _spiderfy = this._spiderfy = new Spiderfy(map, this.options);
-      if (this.options.click) {
-        _spiderfy.addListener('click', this.options.click);
+      var _spiderfy, active, button, buttonDisabled, buttonEnabled, j, len, marker, options, ref, style;
+      options = this.options;
+      _spiderfy = this._spiderfy = new Spiderfy(map, options);
+      if (options.click) {
+        _spiderfy.addListener('click', options.click);
       }
-      if (this.options.activate) {
-        _spiderfy.addListener('activate', this.options.activate);
+      if (options.activate) {
+        _spiderfy.addListener('activate', options.activate);
       }
-      if (this.options.deactivate) {
-        _spiderfy.addListener('deactivate', this.options.deactivate);
+      if (options.deactivate) {
+        _spiderfy.addListener('deactivate', options.deactivate);
       }
       active = true;
-      buttonEnabled = this.options.msg.buttonEnabled;
-      buttonDisabled = this.options.msg.buttonDisabled;
+      buttonEnabled = options.msg.buttonEnabled;
+      buttonDisabled = options.msg.buttonDisabled;
       button = L.DomUtil.create('a', 'leaflet-bar leaflet-control leaflet-control-spiderfy');
       button.setAttribute('href', '#');
       button.setAttribute('title', buttonEnabled);
-      button.innerHTML = this.options.icon;
+      button.innerHTML = options.icon;
       style = button.style;
       style.backgroundColor = 'white';
       style.width = '30px';
       style.height = '30px';
-      ref = this.options.markers;
+      ref = options.markers;
       for (j = 0, len = ref.length; j < len; j++) {
         marker = ref[j];
         _spiderfy.addMarker(marker);
       }
-      disableCallback = function() {
-        if (this.options.disable) {
-          return this.options.disable();
-        }
-      };
-      enableCallback = function() {
-        if (this.options.enable) {
-          return this.options.enable();
-        }
-      };
       button.onclick = function() {
         if (active) {
           active = false;
           button.setAttribute('title', buttonDisabled);
           style.opacity = 0.5;
           _spiderfy.deactivate().disable();
-          return disableCallback();
+          if (options.disable) {
+            return options.disable();
+          }
         } else {
           active = true;
           button.setAttribute('title', buttonEnabled);
           style.opacity = 1;
           _spiderfy.enable();
-          return enableCallback();
+          if (options.enable) {
+            return options.enable();
+          }
         }
       };
       return button;

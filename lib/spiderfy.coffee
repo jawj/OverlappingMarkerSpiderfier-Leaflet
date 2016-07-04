@@ -299,33 +299,27 @@ L.Spiderfy = L.Control.extend(
     msg: defaults.msg
     icon: defaults.icon
   onAdd: (map) ->
-    _spiderfy = this._spiderfy = new Spiderfy(map, @options)
-    if @options.click
-      _spiderfy.addListener('click', @options.click)
-    if @options.activate
-      _spiderfy.addListener('activate', @options.activate)
-    if @options.deactivate
-      _spiderfy.addListener('deactivate', @options.deactivate)
+    options = @options
+    _spiderfy = this._spiderfy = new Spiderfy(map, options)
+    if options.click
+      _spiderfy.addListener('click', options.click)
+    if options.activate
+      _spiderfy.addListener('activate', options.activate)
+    if options.deactivate
+      _spiderfy.addListener('deactivate', options.deactivate)
     active = yes
-    buttonEnabled = @options.msg.buttonEnabled
-    buttonDisabled = @options.msg.buttonDisabled
+    buttonEnabled = options.msg.buttonEnabled
+    buttonDisabled = options.msg.buttonDisabled
     button = L.DomUtil.create('a', 'leaflet-bar leaflet-control leaflet-control-spiderfy')
     button.setAttribute('href', '#')
     button.setAttribute('title', buttonEnabled)
-    button.innerHTML = @options.icon
+    button.innerHTML = options.icon
     style = button.style
     style.backgroundColor = 'white'
     style.width = '30px'
     style.height = '30px'
-    for marker in @options.markers
+    for marker in options.markers
       _spiderfy.addMarker(marker)
-
-    disableCallback = ->
-      if @options.disable
-        @options.disable()
-    enableCallback = ->
-      if @options.enable
-        @options.enable()
 
     button.onclick = () ->
       if (active)
@@ -336,7 +330,8 @@ L.Spiderfy = L.Control.extend(
           .deactivate()
           .disable()
 
-        disableCallback()
+        if options.disable
+          options.disable()
       else
         active = yes
         button.setAttribute('title', buttonEnabled)
@@ -344,7 +339,8 @@ L.Spiderfy = L.Control.extend(
         _spiderfy
           .enable()
 
-        enableCallback()
+        if options.enable
+          options.enable()
     button
 )
 p = L.Spiderfy.prototype;
