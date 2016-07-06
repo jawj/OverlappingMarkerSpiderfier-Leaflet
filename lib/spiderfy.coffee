@@ -86,7 +86,7 @@ class @Spiderfy
 
   p.generatePtsCircle = (count, centerPt) ->
     circumference = @circleFootSeparation * (2 + count)
-    legLength = circumference / twoPi  # = radius from circumference
+    legLength = if count > 6 then circumference / twoPi else @circleFootSeparation  # = radius from circumference
     angleStep = twoPi / count
     calculatedStartAngle = @circleStartAngle * (Math.PI / 180)
     for i in [0...count]
@@ -150,13 +150,16 @@ class @Spiderfy
       marker = nearestMarkerDatum.marker
       markerCoords = marker.getLatLng()
       lastMarkerCoords = markerCoords
-      leg = new L.Polyline [markerCoords, footLl], {
+      leg = new L.Polyline([markerCoords, footLl],
         color: @legColors.usual
         weight: @legWeight
-        clickable: no
-      }
+        clickable: no)
+
       @map.addLayer(leg)
-      marker._spiderfyData = {usualPosition: marker.getLatLng(), leg: leg}
+      marker._spiderfyData =
+        usualPosition: marker.getLatLng()
+        leg: leg
+
       unless @legColors.highlighted is @legColors.usual
         mhl = @makeHighlightListeners(marker)
         marker._spiderfyData.highlightListeners = mhl

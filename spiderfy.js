@@ -155,7 +155,7 @@
     p.generatePtsCircle = function(count, centerPt) {
       var angle, angleStep, calculatedStartAngle, circumference, i, j, legLength, ref, results;
       circumference = this.circleFootSeparation * (2 + count);
-      legLength = circumference / twoPi;
+      legLength = count > 9 ? circumference / twoPi : this.circleFootSeparation;
       angleStep = twoPi / count;
       calculatedStartAngle = this.circleStartAngle * (Math.PI / 180);
       results = [];
