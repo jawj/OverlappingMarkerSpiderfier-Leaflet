@@ -4,11 +4,11 @@
 
   /** @preserve Spiderfy
   https://github.com/jawj/OverlappingMarkerSpiderfier-Leaflet
-  Copyright (c) 2011 - 2012 George MacKerron
+  Copyright (c) 2011 - 2016 George MacKerron
   Released under the MIT licence: http://opensource.org/licenses/mit-license
   Note: The Leaflet maps API must be included *before* this code
    */
-  var VERSION, defaults, p,
+  var defaults,
     slice = [].slice;
 
   if (this.L == null) {
@@ -16,7 +16,7 @@
   }
 
   this.Spiderfy = (function() {
-    var p, twoPi;
+    var twoPi;
 
     twoPi = Math.PI * 2;
 
@@ -32,6 +32,13 @@
       this.enabled = true;
       this.initMarkerArrays();
       this.listeners = {};
+      this.bounds = null;
+      this.ne = null;
+      this.sw = null;
+      if (this.viewportOnly) {
+        this.updateBounds();
+        this.map.addEventListener('moveend', this.updateBounds.bind(this));
+      }
       if (this.offEvents && this.offEvents.length) {
         ref = this.offEvents;
         for (j = 0, len = ref.length; j < len; j++) {
@@ -41,371 +48,368 @@
       }
     }
 
-    p = Spiderfy.prototype;
-
-    p.VERSION = '1.0.0';
-
-    p.initMarkerArrays = function() {
-      this.markers = [];
-      this.markerListeners = [];
-      return this.bodies = [];
-    };
-
-    p.addMarker = function(marker) {
-      var e, j, len, markerListener, ref;
-      if (marker._hasSpiderfy != null) {
-        return this;
-      }
-      marker._hasSpiderfy = true;
-      markerListener = (function(_this) {
-        return function() {
-          return _this.activateMarker(marker);
-        };
-      })(this);
-      if (this.onEvents && this.onEvents.length) {
-        ref = this.onEvents;
-        for (j = 0, len = ref.length; j < len; j++) {
-          e = ref[j];
-          marker.addEventListener(e, markerListener);
+    Spiderfy.prototype = {
+      VERSION: '1.0.0',
+      initMarkerArrays: function() {
+        this.markers = [];
+        this.markerListeners = [];
+        return this.bodies = [];
+      },
+      addMarker: function(marker) {
+        var e, j, len, markerListener, ref;
+        if (marker._hasSpiderfy != null) {
+          return this;
         }
-      }
-      this.markerListeners.push(markerListener);
-      this.markers.push(marker);
-      return this;
-    };
-
-    p.getMarkers = function() {
-      return this.markers.slice(0);
-    };
-
-    p.removeMarker = function(marker) {
-      var e, i, j, len, markerListener, ref;
-      if (marker._spiderfyData != null) {
-        this.deactivate();
-      }
-      i = this.arrIndexOf(this.markers, marker);
-      if (i < 0) {
-        return this;
-      }
-      markerListener = this.markerListeners.splice(i, 1)[0];
-      if (this.onEvents && this.onEvents.length) {
-        ref = this.onEvents;
-        for (j = 0, len = ref.length; j < len; j++) {
-          e = ref[j];
-          marker.removeEventListener(e, markerListener);
-        }
-      }
-      delete marker._hasSpiderfy;
-      this.markers.splice(i, 1);
-      return this;
-    };
-
-    p.clearMarkers = function() {
-      var e, i, j, k, len, len1, marker, markerListener, ref, ref1;
-      this.deactivate();
-      ref = this.markers;
-      for (i = j = 0, len = ref.length; j < len; i = ++j) {
-        marker = ref[i];
-        markerListener = this.markerListeners[i];
+        marker._hasSpiderfy = true;
+        markerListener = (function(_this) {
+          return function() {
+            return _this.activateMarker(marker);
+          };
+        })(this);
         if (this.onEvents && this.onEvents.length) {
-          ref1 = this.onEvents;
-          for (k = 0, len1 = ref1.length; k < len1; k++) {
-            e = ref1[k];
+          ref = this.onEvents;
+          for (j = 0, len = ref.length; j < len; j++) {
+            e = ref[j];
+            marker.addEventListener(e, markerListener);
+          }
+        }
+        this.markerListeners.push(markerListener);
+        this.markers.push(marker);
+        return this;
+      },
+      getMarkers: function() {
+        return this.markers.slice(0);
+      },
+      removeMarker: function(marker) {
+        var e, i, j, len, markerListener, ref;
+        if (marker._spiderfyData != null) {
+          this.deactivate();
+        }
+        i = this.arrIndexOf(this.markers, marker);
+        if (i < 0) {
+          return this;
+        }
+        markerListener = this.markerListeners.splice(i, 1)[0];
+        if (this.onEvents && this.onEvents.length) {
+          ref = this.onEvents;
+          for (j = 0, len = ref.length; j < len; j++) {
+            e = ref[j];
             marker.removeEventListener(e, markerListener);
           }
         }
         delete marker._hasSpiderfy;
-      }
-      this.initMarkerArrays();
-      return this;
-    };
-
-    p.addListener = function(event, func) {
-      var base;
-      ((base = this.listeners)[event] != null ? base[event] : base[event] = []).push(func);
-      return this;
-    };
-
-    p.removeListener = function(event, func) {
-      var i;
-      i = this.arrIndexOf(this.listeners[event], func);
-      if (!(i < 0)) {
-        this.listeners[event].splice(i, 1);
-      }
-      return this;
-    };
-
-    p.clearListeners = function(event) {
-      this.listeners[event] = [];
-      return this;
-    };
-
-    p.trigger = function() {
-      var args, event, func, j, len, ref, ref1, results;
-      event = arguments[0], args = 2 <= arguments.length ? slice.call(arguments, 1) : [];
-      ref1 = (ref = this.listeners[event]) != null ? ref : [];
-      results = [];
-      for (j = 0, len = ref1.length; j < len; j++) {
-        func = ref1[j];
-        results.push(func.apply(null, args));
-      }
-      return results;
-    };
-
-    p.generatePtsCircle = function(count, centerPt) {
-      var angle, angleStep, calculatedStartAngle, circumference, i, j, legLength, ref, results;
-      circumference = this.circleFootSeparation * (2 + count);
-      legLength = count > 9 ? circumference / twoPi : this.circleFootSeparation;
-      angleStep = twoPi / count;
-      calculatedStartAngle = this.circleStartAngle * (Math.PI / 180);
-      results = [];
-      for (i = j = 0, ref = count; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-        angle = calculatedStartAngle + i * angleStep;
-        results.push(new L.Point(centerPt.x + legLength * Math.cos(angle), centerPt.y + legLength * Math.sin(angle)));
-      }
-      return results;
-    };
-
-    p.generatePtsSpiral = function(count, centerPt) {
-      var angle, i, j, legLength, pt, ref, results;
-      legLength = this.spiralLengthStart;
-      angle = 0;
-      results = [];
-      for (i = j = 0, ref = count; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-        angle += this.spiralFootSeparation / legLength + i * 0.0005;
-        pt = new L.Point(centerPt.x + legLength * Math.cos(angle), centerPt.y + legLength * Math.sin(angle));
-        legLength += twoPi * this.spiralLengthFactor / angle;
-        results.push(pt);
-      }
-      return results;
-    };
-
-    p.activateMarker = function(marker) {
-      var active, j, len, m, mPt, markerPt, nearbyMarkerData, nonNearbyMarkers, pxSq, ref;
-      active = marker._spiderfyData != null;
-      if (!this.keep) {
-        if (!active) {
-          this.deactivate();
-        }
-      }
-      if (active || !this.enabled) {
-        this.trigger('click', marker);
+        this.markers.splice(i, 1);
         return this;
-      } else {
-        nearbyMarkerData = [];
+      },
+      clearMarkers: function() {
+        var e, i, j, k, len, len1, marker, markerListener, ref, ref1;
+        this.deactivate();
+        ref = this.markers;
+        for (i = j = 0, len = ref.length; j < len; i = ++j) {
+          marker = ref[i];
+          markerListener = this.markerListeners[i];
+          if (this.onEvents && this.onEvents.length) {
+            ref1 = this.onEvents;
+            for (k = 0, len1 = ref1.length; k < len1; k++) {
+              e = ref1[k];
+              marker.removeEventListener(e, markerListener);
+            }
+          }
+          delete marker._hasSpiderfy;
+        }
+        this.initMarkerArrays();
+        return this;
+      },
+      addListener: function(event, func) {
+        var base;
+        ((base = this.listeners)[event] != null ? base[event] : base[event] = []).push(func);
+        return this;
+      },
+      removeListener: function(event, func) {
+        var i;
+        i = this.arrIndexOf(this.listeners[event], func);
+        if (!(i < 0)) {
+          this.listeners[event].splice(i, 1);
+        }
+        return this;
+      },
+      clearListeners: function(event) {
+        this.listeners[event] = [];
+        return this;
+      },
+      trigger: function() {
+        var args, event, func, j, len, ref, ref1, results;
+        event = arguments[0], args = 2 <= arguments.length ? slice.call(arguments, 1) : [];
+        ref1 = (ref = this.listeners[event]) != null ? ref : [];
+        results = [];
+        for (j = 0, len = ref1.length; j < len; j++) {
+          func = ref1[j];
+          results.push(func.apply(null, args));
+        }
+        return results;
+      },
+      generatePtsCircle: function(count, centerPt) {
+        var angle, angleStep, calculatedStartAngle, circumference, i, j, legLength, ref, results;
+        circumference = this.circleFootSeparation * (2 + count);
+        legLength = count > 6 ? circumference / twoPi : this.circleFootSeparation;
+        angleStep = twoPi / count;
+        calculatedStartAngle = this.circleStartAngle * (Math.PI / 180);
+        results = [];
+        for (i = j = 0, ref = count; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
+          angle = calculatedStartAngle + i * angleStep;
+          results.push(new L.Point(centerPt.x + legLength * Math.cos(angle), centerPt.y + legLength * Math.sin(angle)));
+        }
+        return results;
+      },
+      generatePtsSpiral: function(count, centerPt) {
+        var angle, i, j, legLength, pt, ref, results;
+        legLength = this.spiralLengthStart;
+        angle = 0;
+        results = [];
+        for (i = j = 0, ref = count; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
+          angle += this.spiralFootSeparation / legLength + i * 0.0005;
+          pt = new L.Point(centerPt.x + legLength * Math.cos(angle), centerPt.y + legLength * Math.sin(angle));
+          legLength += twoPi * this.spiralLengthFactor / angle;
+          results.push(pt);
+        }
+        return results;
+      },
+      activateMarker: function(marker) {
+        var active, j, latLng, len, m, mPt, markerPt, nearbyMarkerData, nonNearbyMarkers, pxSq, ref;
+        latLng = marker.getLatLng();
+        if (this.viewportOnly && !this.isInViewPort(latLng)) {
+          return this;
+        }
+        active = marker._spiderfyData != null;
+        if (!this.keep) {
+          if (!active) {
+            this.deactivate();
+          }
+        }
+        if (active || !this.enabled) {
+          this.trigger('click', marker);
+          return this;
+        } else {
+          nearbyMarkerData = [];
+          nonNearbyMarkers = [];
+          pxSq = this.nearbyDistance * this.nearbyDistance;
+          markerPt = this.map.latLngToLayerPoint(latLng);
+          ref = this.markers;
+          for (j = 0, len = ref.length; j < len; j++) {
+            m = ref[j];
+            if (!this.map.hasLayer(m)) {
+              continue;
+            }
+            mPt = this.map.latLngToLayerPoint(m.getLatLng());
+            if (this.ptDistanceSq(mPt, markerPt) < pxSq) {
+              nearbyMarkerData.push({
+                marker: m,
+                markerPt: mPt
+              });
+            } else {
+              nonNearbyMarkers.push(m);
+            }
+          }
+          if (nearbyMarkerData.length === 1) {
+            this.trigger('click', marker);
+          } else if (nearbyMarkerData.length > 0 && nonNearbyMarkers.length > 0) {
+            this.activate(nearbyMarkerData, nonNearbyMarkers);
+          } else {
+            null;
+          }
+        }
+        return this;
+      },
+      makeHighlightListeners: function(marker) {
+        return {
+          highlight: (function(_this) {
+            return function() {
+              return marker._spiderfyData.leg.setStyle({
+                color: _this.legColors.highlighted
+              });
+            };
+          })(this),
+          unhighlight: (function(_this) {
+            return function() {
+              return marker._spiderfyData.leg.setStyle({
+                color: _this.legColors.usual
+              });
+            };
+          })(this)
+        };
+      },
+      activate: function(markerData, nonNearbyMarkers) {
+        var activeMarkers, body, bodyPt, footLl, footPt, footPts, lastMarkerCoords, leg, marker, markerCoords, md, mhl, nearestMarkerDatum, numFeet;
+        if (!this.enabled) {
+          return;
+        }
+        this.activating = true;
+        if (this.viewportOnly) {
+          this.updateBounds();
+        }
+        numFeet = markerData.length;
+        bodyPt = this.ptAverage((function() {
+          var j, len, results;
+          results = [];
+          for (j = 0, len = markerData.length; j < len; j++) {
+            md = markerData[j];
+            results.push(md.markerPt);
+          }
+          return results;
+        })());
+        footPts = numFeet >= this.circleSpiralSwitchover ? this.generatePtsSpiral(numFeet, bodyPt).reverse() : this.generatePtsCircle(numFeet, bodyPt);
+        lastMarkerCoords = null;
+        activeMarkers = (function() {
+          var j, len, results;
+          results = [];
+          for (j = 0, len = footPts.length; j < len; j++) {
+            footPt = footPts[j];
+            footLl = this.map.layerPointToLatLng(footPt);
+            nearestMarkerDatum = this.minExtract(markerData, (function(_this) {
+              return function(md) {
+                return _this.ptDistanceSq(md.markerPt, footPt);
+              };
+            })(this));
+            marker = nearestMarkerDatum.marker;
+            markerCoords = marker.getLatLng();
+            lastMarkerCoords = markerCoords;
+            leg = new L.Polyline([markerCoords, footLl], {
+              color: this.legColors.usual,
+              weight: this.legWeight,
+              clickable: false
+            });
+            this.map.addLayer(leg);
+            marker._spiderfyData = {
+              usualPosition: marker.getLatLng(),
+              leg: leg
+            };
+            if (this.legColors.highlighted !== this.legColors.usual) {
+              mhl = this.makeHighlightListeners(marker);
+              marker._spiderfyData.highlightListeners = mhl;
+              marker.addEventListener('mouseover', mhl.highlight);
+              marker.addEventListener('mouseout', mhl.unhighlight);
+            }
+            marker.setLatLng(footLl);
+            if (marker.hasOwnProperty('setZIndexOffset')) {
+              marker.setZIndexOffset(1000000);
+            }
+            results.push(marker);
+          }
+          return results;
+        }).call(this);
+        delete this.activating;
+        this.isActive = true;
+        if (this.body && lastMarkerCoords !== null) {
+          body = L.circleMarker(lastMarkerCoords, this.body);
+          this.map.addLayer(body);
+          this.bodies.push(body);
+        }
+        return this.trigger('activate', activeMarkers, nonNearbyMarkers);
+      },
+      deactivate: function(markerNotToMove) {
+        var body, inactiveMarkers, j, k, len, len1, marker, mhl, nonNearbyMarkers, ref, ref1;
+        if (markerNotToMove == null) {
+          markerNotToMove = null;
+        }
+        if (this.isActive == null) {
+          return this;
+        }
+        this.deactivating = true;
+        inactiveMarkers = [];
         nonNearbyMarkers = [];
-        pxSq = this.nearbyDistance * this.nearbyDistance;
-        markerPt = this.map.latLngToLayerPoint(marker.getLatLng());
         ref = this.markers;
         for (j = 0, len = ref.length; j < len; j++) {
-          m = ref[j];
-          if (!this.map.hasLayer(m)) {
-            continue;
-          }
-          mPt = this.map.latLngToLayerPoint(m.getLatLng());
-          if (this.ptDistanceSq(mPt, markerPt) < pxSq) {
-            nearbyMarkerData.push({
-              marker: m,
-              markerPt: mPt
-            });
+          marker = ref[j];
+          if (marker._spiderfyData != null) {
+            this.map.removeLayer(marker._spiderfyData.leg);
+            if (marker !== markerNotToMove) {
+              marker.setLatLng(marker._spiderfyData.usualPosition);
+            }
+            if (marker.hasOwnProperty('setZIndexOffset')) {
+              marker.setZIndexOffset(0);
+            }
+            mhl = marker._spiderfyData.highlightListeners;
+            if (mhl != null) {
+              marker.removeEventListener('mouseover', mhl.highlight);
+              marker.removeEventListener('mouseout', mhl.unhighlight);
+            }
+            delete marker._spiderfyData;
+            inactiveMarkers.push(marker);
           } else {
-            nonNearbyMarkers.push(m);
+            nonNearbyMarkers.push(marker);
           }
         }
-        if (nearbyMarkerData.length === 1) {
-          return this.trigger('click', marker);
-        } else if (nearbyMarkerData.length > 0 && nonNearbyMarkers.length > 0) {
-          return this.activate(nearbyMarkerData, nonNearbyMarkers);
-        } else {
-          return null;
+        ref1 = this.bodies;
+        for (k = 0, len1 = ref1.length; k < len1; k++) {
+          body = ref1[k];
+          this.map.removeLayer(body);
         }
-      }
-    };
-
-    p.makeHighlightListeners = function(marker) {
-      return {
-        highlight: (function(_this) {
-          return function() {
-            return marker._spiderfyData.leg.setStyle({
-              color: _this.legColors.highlighted
-            });
-          };
-        })(this),
-        unhighlight: (function(_this) {
-          return function() {
-            return marker._spiderfyData.leg.setStyle({
-              color: _this.legColors.usual
-            });
-          };
-        })(this)
-      };
-    };
-
-    p.activate = function(markerData, nonNearbyMarkers) {
-      var activeMarkers, body, bodyPt, footLl, footPt, footPts, lastMarkerCoords, leg, marker, markerCoords, md, mhl, nearestMarkerDatum, numFeet;
-      if (!this.enabled) {
-        return;
-      }
-      this.activating = true;
-      numFeet = markerData.length;
-      bodyPt = this.ptAverage((function() {
-        var j, len, results;
-        results = [];
-        for (j = 0, len = markerData.length; j < len; j++) {
-          md = markerData[j];
-          results.push(md.markerPt);
-        }
-        return results;
-      })());
-      footPts = numFeet >= this.circleSpiralSwitchover ? this.generatePtsSpiral(numFeet, bodyPt).reverse() : this.generatePtsCircle(numFeet, bodyPt);
-      lastMarkerCoords = null;
-      activeMarkers = (function() {
-        var j, len, results;
-        results = [];
-        for (j = 0, len = footPts.length; j < len; j++) {
-          footPt = footPts[j];
-          footLl = this.map.layerPointToLatLng(footPt);
-          nearestMarkerDatum = this.minExtract(markerData, (function(_this) {
-            return function(md) {
-              return _this.ptDistanceSq(md.markerPt, footPt);
-            };
-          })(this));
-          marker = nearestMarkerDatum.marker;
-          markerCoords = marker.getLatLng();
-          lastMarkerCoords = markerCoords;
-          leg = new L.Polyline([markerCoords, footLl], {
-            color: this.legColors.usual,
-            weight: this.legWeight,
-            clickable: false
-          });
-          this.map.addLayer(leg);
-          marker._spiderfyData = {
-            usualPosition: marker.getLatLng(),
-            leg: leg
-          };
-          if (this.legColors.highlighted !== this.legColors.usual) {
-            mhl = this.makeHighlightListeners(marker);
-            marker._spiderfyData.highlightListeners = mhl;
-            marker.addEventListener('mouseover', mhl.highlight);
-            marker.addEventListener('mouseout', mhl.unhighlight);
-          }
-          marker.setLatLng(footLl);
-          if (marker.hasOwnProperty('setZIndexOffset')) {
-            marker.setZIndexOffset(1000000);
-          }
-          results.push(marker);
-        }
-        return results;
-      }).call(this);
-      delete this.activating;
-      this.isActive = true;
-      if (this.body && lastMarkerCoords !== null) {
-        body = L.circleMarker(lastMarkerCoords, this.body);
-        this.map.addLayer(body);
-        this.bodies.push(body);
-      }
-      return this.trigger('activate', activeMarkers, nonNearbyMarkers);
-    };
-
-    p.deactivate = function(markerNotToMove) {
-      var body, inactiveMarkers, j, k, len, len1, marker, mhl, nonNearbyMarkers, ref, ref1;
-      if (markerNotToMove == null) {
-        markerNotToMove = null;
-      }
-      if (this.isActive == null) {
+        delete this.deactivating;
+        delete this.isActive;
+        this.trigger('deactivate', inactiveMarkers, nonNearbyMarkers);
         return this;
-      }
-      this.deactivating = true;
-      inactiveMarkers = [];
-      nonNearbyMarkers = [];
-      ref = this.markers;
-      for (j = 0, len = ref.length; j < len; j++) {
-        marker = ref[j];
-        if (marker._spiderfyData != null) {
-          this.map.removeLayer(marker._spiderfyData.leg);
-          if (marker !== markerNotToMove) {
-            marker.setLatLng(marker._spiderfyData.usualPosition);
-          }
-          if (marker.hasOwnProperty('setZIndexOffset')) {
-            marker.setZIndexOffset(0);
-          }
-          mhl = marker._spiderfyData.highlightListeners;
-          if (mhl != null) {
-            marker.removeEventListener('mouseover', mhl.highlight);
-            marker.removeEventListener('mouseout', mhl.unhighlight);
-          }
-          delete marker._spiderfyData;
-          inactiveMarkers.push(marker);
-        } else {
-          nonNearbyMarkers.push(marker);
+      },
+      ptDistanceSq: function(pt1, pt2) {
+        var dx, dy;
+        dx = pt1.x - pt2.x;
+        dy = pt1.y - pt2.y;
+        return dx * dx + dy * dy;
+      },
+      ptAverage: function(pts) {
+        var j, len, numPts, pt, sumX, sumY;
+        sumX = 0;
+        sumY = 0;
+        for (j = 0, len = pts.length; j < len; j++) {
+          pt = pts[j];
+          sumX += pt.x;
+          sumY += pt.y;
         }
-      }
-      ref1 = this.bodies;
-      for (k = 0, len1 = ref1.length; k < len1; k++) {
-        body = ref1[k];
-        this.map.removeLayer(body);
-      }
-      delete this.deactivating;
-      delete this.isActive;
-      this.trigger('deactivate', inactiveMarkers, nonNearbyMarkers);
-      return this;
-    };
-
-    p.ptDistanceSq = function(pt1, pt2) {
-      var dx, dy;
-      dx = pt1.x - pt2.x;
-      dy = pt1.y - pt2.y;
-      return dx * dx + dy * dy;
-    };
-
-    p.ptAverage = function(pts) {
-      var j, len, numPts, pt, sumX, sumY;
-      sumX = 0;
-      sumY = 0;
-      for (j = 0, len = pts.length; j < len; j++) {
-        pt = pts[j];
-        sumX += pt.x;
-        sumY += pt.y;
-      }
-      numPts = pts.length;
-      return new L.Point(sumX / numPts, sumY / numPts);
-    };
-
-    p.minExtract = function(set, func) {
-      var bestIndex, bestVal, index, item, j, len, val;
-      for (index = j = 0, len = set.length; j < len; index = ++j) {
-        item = set[index];
-        val = func(item);
-        if ((typeof bestIndex === "undefined" || bestIndex === null) || val < bestVal) {
-          bestVal = val;
-          bestIndex = index;
+        numPts = pts.length;
+        return new L.Point(sumX / numPts, sumY / numPts);
+      },
+      minExtract: function(set, func) {
+        var bestIndex, bestVal, index, item, j, len, val;
+        for (index = j = 0, len = set.length; j < len; index = ++j) {
+          item = set[index];
+          val = func(item);
+          if ((typeof bestIndex === "undefined" || bestIndex === null) || val < bestVal) {
+            bestVal = val;
+            bestIndex = index;
+          }
         }
-      }
-      return set.splice(bestIndex, 1)[0];
-    };
-
-    p.arrIndexOf = function(arr, obj) {
-      var i, j, len, o;
-      if (arr.indexOf != null) {
-        return arr.indexOf(obj);
-      }
-      for (i = j = 0, len = arr.length; j < len; i = ++j) {
-        o = arr[i];
-        if (o === obj) {
-          return i;
+        return set.splice(bestIndex, 1)[0];
+      },
+      arrIndexOf: function(arr, obj) {
+        var i, j, len, o;
+        if (arr.indexOf != null) {
+          return arr.indexOf(obj);
         }
+        for (i = j = 0, len = arr.length; j < len; i = ++j) {
+          o = arr[i];
+          if (o === obj) {
+            return i;
+          }
+        }
+        return -1;
+      },
+      enable: function() {
+        this.enabled = true;
+        return this;
+      },
+      disable: function() {
+        this.enabled = false;
+        return this;
+      },
+      updateBounds: function() {
+        var bounds;
+        bounds = this.bounds = this.map.getBounds();
+        this.ne = bounds._northEast;
+        this.sw = bounds._southWest;
+        return this;
+      },
+      isInViewPort: function(latLng) {
+        return latLng.lat > this.sw.lat && latLng.lat < this.ne.lat && latLng.lng > this.sw.lng && latLng.lng < this.ne.lng;
       }
-      return -1;
-    };
-
-    p.enable = function() {
-      this.enabled = true;
-      return this;
-    };
-
-    p.disable = function() {
-      this.enabled = false;
-      return this;
     };
 
     return Spiderfy;
@@ -414,6 +418,7 @@
 
   defaults = this.Spiderfy.defaults = {
     keep: false,
+    viewportOnly: true,
     nearbyDistance: 20,
     circleSpiralSwitchover: 9,
     circleFootSeparation: 25,
@@ -518,113 +523,7 @@
     }
   });
 
-  p = L.Spiderfy.prototype;
-
-  VERSION = Spiderfy.prototype.VERSION;
-
-  p.initMarkerArrays = function() {
-    this._spiderfy.initMarkerArrays();
-    return this;
-  };
-
-  p.addMarker = function(marker) {
-    this._spiderfy.addMarker(marker);
-    return this;
-  };
-
-  p.getMarkers = function() {
-    return this._spiderfy.getMarkers();
-  };
-
-  p.removeMarker = function(marker) {
-    this._spiderfy.removeMarker(marker);
-    return this;
-  };
-
-  p.clearMarkers = function() {
-    this._spiderfy.clearMarkers();
-    return this;
-  };
-
-  p.addListener = function(event, func) {
-    this._spiderfy.addListener(event, func);
-    return this;
-  };
-
-  p.removeListener = function(event, func) {
-    this._spiderfy.removeListener(event, func);
-    return this;
-  };
-
-  p.clearListeners = function(event) {
-    this._spiderfy.clearListeners(event);
-    return this;
-  };
-
-  p.trigger = function() {
-    var args, event;
-    event = arguments[0], args = 2 <= arguments.length ? slice.call(arguments, 1) : [];
-    this._spiderfy.trigger(event, args);
-    return this;
-  };
-
-  p.generatePtsCircle = function(count, centerPt) {
-    this._spiderfy.generatePtsCircle(count, centerPt);
-    return this;
-  };
-
-  p.generatePtsSpiral = function(count, centerPt) {
-    return this._spiderfy.generatePtsSpiral(count, centerPt);
-  };
-
-  p.activateMarker = function(marker) {
-    this._spiderfy.activateMarker(marker);
-    return this;
-  };
-
-  p.makeHighlightListeners = function(marker) {
-    this._spiderfy.makeHighlightListeners(marker);
-    return this;
-  };
-
-  p.activate = function(markerData, nonNearbyMarkers) {
-    this._spiderfy.activate(markerData, nonNearbyMarkers);
-    return this;
-  };
-
-  p.deactivate = function(markerNotToMove) {
-    if (markerNotToMove == null) {
-      markerNotToMove = null;
-    }
-    this._spiderfy.deactivate(markerNotToMove);
-    return this;
-  };
-
-  p.ptDistanceSq = function(pt1, pt2) {
-    return this._spiderfy.ptDistanceSq(pt1, pt2);
-  };
-
-  p.ptAverage = function(pts) {
-    return this._spiderfy.ptAverage(pts);
-  };
-
-  p.minExtract = function(set, func) {
-    return this._spiderfy.minExtract(set, func);
-  };
-
-  p.arrIndexOf = function(arr, obj) {
-    return this._spiderfy.arrIndexOf(arr, obj);
-  };
-
-  p.enable = function() {
-    this._spiderfy.enable();
-    return this;
-  };
-
-  p.disable = function() {
-    this._spiderfy.disable();
-    return this;
-  };
+  Object.assign(L.Spiderfy.prototype, Spiderfy.prototype);
 
   L.spiderfy = function(options) {
     var spiderfy;
