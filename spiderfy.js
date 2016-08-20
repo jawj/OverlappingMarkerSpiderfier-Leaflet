@@ -35,15 +35,16 @@
       this.bounds = null;
       this.ne = null;
       this.sw = null;
+      this.visibleMarkers = [];
       if (this.viewportOnly) {
         this.updateBounds();
-        this.map.addEventListener('moveend', this.updateBounds.bind(this));
+        this.map.on('moveend', this.updateBounds.bind(this));
       }
       if (this.offEvents && this.offEvents.length) {
         ref = this.offEvents;
         for (j = 0, len = ref.length; j < len; j++) {
           e = ref[j];
-          this.map.addEventListener(e, this.deactivate.bind(this));
+          this.map.on(e, this.deactivate.bind(this));
         }
       }
     }
@@ -70,7 +71,7 @@
           ref = this.onEvents;
           for (j = 0, len = ref.length; j < len; j++) {
             e = ref[j];
-            marker.addEventListener(e, markerListener);
+            marker.on(e, markerListener);
           }
         }
         this.markerListeners.push(markerListener);
@@ -286,13 +287,14 @@
             if (this.legColors.highlighted !== this.legColors.usual) {
               mhl = this.makeHighlightListeners(marker);
               marker._spiderfyData.highlightListeners = mhl;
-              marker.addEventListener('mouseover', mhl.highlight);
-              marker.addEventListener('mouseout', mhl.unhighlight);
+              marker.on('mouseover', mhl.highlight);
+              marker.on('mouseout', mhl.unhighlight);
             }
             marker.setLatLng(footLl);
             if (marker.hasOwnProperty('setZIndexOffset')) {
               marker.setZIndexOffset(1000000);
             }
+            this.visibleMarkers.push(marker);
             results.push(marker);
           }
           return results;
@@ -301,13 +303,14 @@
         this.isActive = true;
         if (this.body && lastMarkerCoords !== null) {
           body = L.circleMarker(lastMarkerCoords, this.body);
+          marker._spiderfyData.body = body;
           this.map.addLayer(body);
           this.bodies.push(body);
         }
         return this.trigger('activate', activeMarkers, nonNearbyMarkers);
       },
       deactivate: function(markerNotToMove) {
-        var body, inactiveMarkers, j, k, len, len1, marker, mhl, nonNearbyMarkers, ref, ref1;
+        var activeMarkerIndex, body, inactiveMarkers, j, k, len, len1, marker, mhl, nonNearbyMarkers, ref, ref1;
         if (markerNotToMove == null) {
           markerNotToMove = null;
         }
@@ -335,6 +338,10 @@
             }
             delete marker._spiderfyData;
             inactiveMarkers.push(marker);
+            activeMarkerIndex = this.visibleMarkers.indexOf(marker);
+            if (activeMarkerIndex > -1) {
+              this.visibleMarkers.splice(activeMarkerIndex, -1);
+            }
           } else {
             nonNearbyMarkers.push(marker);
           }
@@ -347,6 +354,24 @@
         delete this.deactivating;
         delete this.isActive;
         this.trigger('deactivate', inactiveMarkers, nonNearbyMarkers);
+        return this;
+      },
+      hideVisibleMarkers: function() {
+        var j, len, marker, ref, spiderfyData;
+        ref = this.visibleMarkers;
+        for (j = 0, len = ref.length; j < len; j++) {
+          marker = ref[j];
+          this.map.removeLayer(marker);
+          if (marker._spiderfyData != null) {
+            spiderfyData = marker._spiderfyData;
+            if (spiderfyData.leg) {
+              this.map.removeLayer(spiderfyData.leg);
+            }
+            if (spiderfyData.body) {
+              this.map.removeLayer(spiderfyData.body);
+            }
+          }
+        }
         return this;
       },
       ptDistanceSq: function(pt1, pt2) {
@@ -565,7 +590,8 @@
       return this;
     },
     generatePtsSpiral: function(count, centerPt) {
-      return this._spiderfy.generatePtsSpiral(count, centerPt);
+      this._spiderfy.generatePtsSpiral(count, centerPt);
+      return this;
     },
     activateMarker: function(marker) {
       this._spiderfy.activateMarker(marker);
@@ -586,17 +612,25 @@
       this._spiderfy.deactivate(markerNotToMove);
       return this;
     },
+    hideVisibleMarkers: function() {
+      this._spiderfy.hideVisibleMarkers();
+      return this;
+    },
     ptDistanceSq: function(pt1, pt2) {
-      return this._spiderfy.ptDistanceSq(pt1, pt2);
+      this._spiderfy.ptDistanceSq(pt1, pt2);
+      return this;
     },
     ptAverage: function(pts) {
-      return this._spiderfy.ptAverage(pts);
+      this._spiderfy.ptAverage(pts);
+      return this;
     },
     minExtract: function(set, func) {
-      return this._spiderfy.minExtract(set, func);
+      this._spiderfy.minExtract(set, func);
+      return this;
     },
     arrIndexOf: function(arr, obj) {
-      return this._spiderfy.arrIndexOf(arr, obj);
+      this._spiderfy.arrIndexOf(arr, obj);
+      return this;
     },
     enable: function() {
       this._spiderfy.enable();

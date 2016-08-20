@@ -23,12 +23,13 @@ class @Spiderfy
     @bounds = null
     @ne = null
     @sw = null
+    @visibleMarkers = []
     if @viewportOnly
       @updateBounds()
-      @map.addEventListener('moveend', @updateBounds.bind(@))
+      @map.on('moveend', @updateBounds.bind(@))
     if @offEvents && @offEvents.length
       for e in @offEvents
-        @map.addEventListener(e, @deactivate.bind(@))
+        @map.on(e, @deactivate.bind(@))
 
   @::=
 
@@ -44,7 +45,7 @@ class @Spiderfy
     markerListener = () => @activateMarker(marker)
     if @onEvents && @onEvents.length
       for e in @onEvents
-        marker.addEventListener(e, markerListener)
+        marker.on(e, markerListener)
     @markerListeners.push(markerListener)
     @markers.push(marker)
     @
@@ -174,16 +175,18 @@ class @Spiderfy
       unless @legColors.highlighted is @legColors.usual
         mhl = @makeHighlightListeners(marker)
         marker._spiderfyData.highlightListeners = mhl
-        marker.addEventListener('mouseover', mhl.highlight)
-        marker.addEventListener('mouseout',  mhl.unhighlight)
+        marker.on('mouseover', mhl.highlight)
+        marker.on('mouseout',  mhl.unhighlight)
       marker.setLatLng(footLl)
       if marker.hasOwnProperty('setZIndexOffset')
         marker.setZIndexOffset(1000000)
+      @visibleMarkers.push(marker)
       marker
     delete @activating
     @isActive = yes
     if @body && lastMarkerCoords != null
       body = L.circleMarker(lastMarkerCoords, @body)
+      marker._spiderfyData.body = body
       @map.addLayer(body)
       @bodies.push(body)
     @trigger('activate', activeMarkers, nonNearbyMarkers)
@@ -205,6 +208,8 @@ class @Spiderfy
           marker.removeEventListener('mouseout',  mhl.unhighlight)
         delete marker._spiderfyData
         inactiveMarkers.push(marker)
+        activeMarkerIndex = @visibleMarkers.indexOf(marker)
+        if activeMarkerIndex > -1 then @visibleMarkers.splice(activeMarkerIndex, -1)
       else
         nonNearbyMarkers.push(marker)
 
@@ -215,7 +220,14 @@ class @Spiderfy
     delete @isActive
     @trigger('deactivate', inactiveMarkers, nonNearbyMarkers)
     @
-
+  hideVisibleMarkers: () ->
+    for marker in @visibleMarkers
+      @map.removeLayer(marker)
+      if marker._spiderfyData?
+        spiderfyData = marker._spiderfyData
+        if spiderfyData.leg then @map.removeLayer(spiderfyData.leg)
+        if spiderfyData.body then @map.removeLayer(spiderfyData.body)
+    @
   ptDistanceSq: (pt1, pt2) ->
     dx = pt1.x - pt2.x
     dy = pt1.y - pt2.y
@@ -402,6 +414,7 @@ L.Spiderfy = L.Control.extend(
     @
   generatePtsSpiral: (count, centerPt) ->
     @_spiderfy.generatePtsSpiral(count, centerPt)
+    @
   activateMarker: (marker) ->
     @_spiderfy.activateMarker(marker)
     @
@@ -414,14 +427,21 @@ L.Spiderfy = L.Control.extend(
   deactivate: (markerNotToMove = null) ->
     @_spiderfy.deactivate(markerNotToMove)
     @
+  hideVisibleMarkers: () ->
+    @_spiderfy.hideVisibleMarkers()
+    @
   ptDistanceSq: (pt1, pt2) ->
     @_spiderfy.ptDistanceSq(pt1, pt2)
+    @
   ptAverage: (pts) ->
     @_spiderfy.ptAverage(pts)
+    @
   minExtract: (set, func) ->
     @_spiderfy.minExtract(set, func)
+    @
   arrIndexOf: (arr, obj) ->
-    @_spiderfy.arrIndexOf(arr, obj);
+    @_spiderfy.arrIndexOf(arr, obj)
+    @
   enable: () ->
     @_spiderfy.enable()
     @
