@@ -520,10 +520,101 @@
         }
       };
       return button;
+    },
+    VERSION: Spiderfy.prototype.VERSION,
+    initMarkerArrays: function() {
+      this._spiderfy.initMarkerArrays();
+      return this;
+    },
+    addMarker: function(marker) {
+      this._spiderfy.addMarker(marker);
+      return this;
+    },
+    getMarkers: function() {
+      this._spiderfy.getMarkers();
+      return this;
+    },
+    removeMarker: function(marker) {
+      this._spiderfy.removeMarker(marker);
+      return this;
+    },
+    clearMarkers: function() {
+      this._spiderfy.clearMarkers();
+      return this;
+    },
+    addListener: function(event, func) {
+      this._spiderfy.addListener(event, func);
+      return this;
+    },
+    removeListener: function(event, func) {
+      this._spiderfy.removeListener(event, func);
+      return this;
+    },
+    clearListeners: function(event) {
+      this._spiderfy.clearListeners(event);
+      return this;
+    },
+    trigger: function() {
+      var args, event;
+      event = arguments[0], args = 2 <= arguments.length ? slice.call(arguments, 1) : [];
+      this._spiderfy.trigger(event, args);
+      return this;
+    },
+    generatePtsCircle: function(count, centerPt) {
+      this._spiderfy.generatePtsCircle(count, centerPt);
+      return this;
+    },
+    generatePtsSpiral: function(count, centerPt) {
+      return this._spiderfy.generatePtsSpiral(count, centerPt);
+    },
+    activateMarker: function(marker) {
+      this._spiderfy.activateMarker(marker);
+      return this;
+    },
+    makeHighlightListeners: function(marker) {
+      this._spiderfy.makeHighlightListeners(marker);
+      return this;
+    },
+    activate: function(markerData, nonNearbyMarkers) {
+      this._spiderfy.activate(markerData, nonNearbyMarkers);
+      return this;
+    },
+    deactivate: function(markerNotToMove) {
+      if (markerNotToMove == null) {
+        markerNotToMove = null;
+      }
+      this._spiderfy.deactivate(markerNotToMove);
+      return this;
+    },
+    ptDistanceSq: function(pt1, pt2) {
+      return this._spiderfy.ptDistanceSq(pt1, pt2);
+    },
+    ptAverage: function(pts) {
+      return this._spiderfy.ptAverage(pts);
+    },
+    minExtract: function(set, func) {
+      return this._spiderfy.minExtract(set, func);
+    },
+    arrIndexOf: function(arr, obj) {
+      return this._spiderfy.arrIndexOf(arr, obj);
+    },
+    enable: function() {
+      this._spiderfy.enable();
+      return this;
+    },
+    disable: function() {
+      this._spiderfy.disable();
+      return this;
+    },
+    updateBounds: function() {
+      this._spiderfy.updateBounds();
+      return this;
+    },
+    isInViewPort: function(latLng) {
+      this._spiderfy.isInViewPort(latLng);
+      return this;
     }
   });
-
-  Object.assign(L.Spiderfy.prototype, Spiderfy.prototype);
 
   L.spiderfy = function(options) {
     var spiderfy;
