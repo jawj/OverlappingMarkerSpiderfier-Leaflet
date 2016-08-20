@@ -320,7 +320,7 @@
         this.deactivating = true;
         inactiveMarkers = [];
         nonNearbyMarkers = [];
-        ref = this.markers;
+        ref = this.visibleMarkers;
         for (j = 0, len = ref.length; j < len; j++) {
           marker = ref[j];
           if (marker._spiderfyData != null) {
@@ -354,24 +354,6 @@
         delete this.deactivating;
         delete this.isActive;
         this.trigger('deactivate', inactiveMarkers, nonNearbyMarkers);
-        return this;
-      },
-      hideVisibleMarkers: function() {
-        var j, len, marker, ref, spiderfyData;
-        ref = this.visibleMarkers;
-        for (j = 0, len = ref.length; j < len; j++) {
-          marker = ref[j];
-          this.map.removeLayer(marker);
-          if (marker._spiderfyData != null) {
-            spiderfyData = marker._spiderfyData;
-            if (spiderfyData.leg) {
-              this.map.removeLayer(spiderfyData.leg);
-            }
-            if (spiderfyData.body) {
-              this.map.removeLayer(spiderfyData.body);
-            }
-          }
-        }
         return this;
       },
       ptDistanceSq: function(pt1, pt2) {

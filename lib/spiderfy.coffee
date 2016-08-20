@@ -196,7 +196,7 @@ class @Spiderfy
     @deactivating = yes
     inactiveMarkers = []
     nonNearbyMarkers = []
-    for marker in @markers
+    for marker in @visibleMarkers
       if marker._spiderfyData?
         @map.removeLayer(marker._spiderfyData.leg)
         marker.setLatLng(marker._spiderfyData.usualPosition) unless marker is markerNotToMove
@@ -220,14 +220,7 @@ class @Spiderfy
     delete @isActive
     @trigger('deactivate', inactiveMarkers, nonNearbyMarkers)
     @
-  hideVisibleMarkers: () ->
-    for marker in @visibleMarkers
-      @map.removeLayer(marker)
-      if marker._spiderfyData?
-        spiderfyData = marker._spiderfyData
-        if spiderfyData.leg then @map.removeLayer(spiderfyData.leg)
-        if spiderfyData.body then @map.removeLayer(spiderfyData.body)
-    @
+
   ptDistanceSq: (pt1, pt2) ->
     dx = pt1.x - pt2.x
     dy = pt1.y - pt2.y
