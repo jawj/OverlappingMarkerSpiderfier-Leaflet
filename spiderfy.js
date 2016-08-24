@@ -189,7 +189,6 @@
         }
         if (active || !this.enabled) {
           this.trigger('click', marker);
-          return this;
         } else {
           nearbyMarkerData = [];
           nonNearbyMarkers = [];
@@ -215,8 +214,6 @@
             this.trigger('click', marker);
           } else if (nearbyMarkerData.length > 0 && nonNearbyMarkers.length > 0) {
             this.activate(nearbyMarkerData, nonNearbyMarkers);
-          } else {
-            null;
           }
         }
         return this;
@@ -538,8 +535,7 @@
       return this;
     },
     getMarkers: function() {
-      this._spiderfy.getMarkers();
-      return this;
+      return this._spiderfy.getMarkers();
     },
     removeMarker: function(marker) {
       this._spiderfy.removeMarker(marker);
@@ -572,8 +568,7 @@
       return this;
     },
     generatePtsSpiral: function(count, centerPt) {
-      this._spiderfy.generatePtsSpiral(count, centerPt);
-      return this;
+      return this._spiderfy.generatePtsSpiral(count, centerPt);
     },
     activateMarker: function(marker) {
       this._spiderfy.activateMarker(marker);
@@ -599,20 +594,16 @@
       return this;
     },
     ptDistanceSq: function(pt1, pt2) {
-      this._spiderfy.ptDistanceSq(pt1, pt2);
-      return this;
+      return this._spiderfy.ptDistanceSq(pt1, pt2);
     },
     ptAverage: function(pts) {
-      this._spiderfy.ptAverage(pts);
-      return this;
+      return this._spiderfy.ptAverage(pts);
     },
     minExtract: function(set, func) {
-      this._spiderfy.minExtract(set, func);
-      return this;
+      return this._spiderfy.minExtract(set, func);
     },
     arrIndexOf: function(arr, obj) {
-      this._spiderfy.arrIndexOf(arr, obj);
-      return this;
+      return this._spiderfy.arrIndexOf(arr, obj);
     },
     enable: function() {
       this._spiderfy.enable();
@@ -627,8 +618,7 @@
       return this;
     },
     isInViewPort: function(latLng) {
-      this._spiderfy.isInViewPort(latLng);
-      return this;
+      return this._spiderfy.isInViewPort(latLng);
     }
   });
 

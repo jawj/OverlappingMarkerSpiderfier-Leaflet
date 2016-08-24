@@ -120,7 +120,6 @@ class @Spiderfy
       @deactivate() unless active
     if active or !@enabled
       @trigger('click', marker)
-      return @
     else
       nearbyMarkerData = []
       nonNearbyMarkers = []
@@ -137,8 +136,6 @@ class @Spiderfy
         @trigger('click', marker)
       else if (nearbyMarkerData.length > 0 && nonNearbyMarkers.length > 0)
         @activate(nearbyMarkerData, nonNearbyMarkers)
-      else
-        null
     @
 
   makeHighlightListeners: (marker) ->
@@ -383,7 +380,6 @@ L.Spiderfy = L.Control.extend(
     @
   getMarkers: () ->
     @_spiderfy.getMarkers()
-    @
   removeMarker: (marker) ->
     @_spiderfy.removeMarker(marker)
     @
@@ -407,7 +403,6 @@ L.Spiderfy = L.Control.extend(
     @
   generatePtsSpiral: (count, centerPt) ->
     @_spiderfy.generatePtsSpiral(count, centerPt)
-    @
   activateMarker: (marker) ->
     @_spiderfy.activateMarker(marker)
     @
@@ -425,16 +420,12 @@ L.Spiderfy = L.Control.extend(
     @
   ptDistanceSq: (pt1, pt2) ->
     @_spiderfy.ptDistanceSq(pt1, pt2)
-    @
   ptAverage: (pts) ->
     @_spiderfy.ptAverage(pts)
-    @
   minExtract: (set, func) ->
     @_spiderfy.minExtract(set, func)
-    @
   arrIndexOf: (arr, obj) ->
     @_spiderfy.arrIndexOf(arr, obj)
-    @
   enable: () ->
     @_spiderfy.enable()
     @
@@ -446,7 +437,6 @@ L.Spiderfy = L.Control.extend(
     @
   isInViewPort: (latLng) ->
     @_spiderfy.isInViewPort(latLng)
-    @
 )
 
 L.spiderfy = (options) ->
