@@ -8,7 +8,7 @@ Note: The Leaflet maps API must be included *before* this code
 
 # NB. string literal properties -- object.key -- are for Closure Compiler ADVANCED_OPTIMIZATION
 
-return unless @L?  # return from wrapper func without doing anything
+return if @.hasOwnProperty('L') is no # return from wrapper func without doing anything
 
 class @Spiderfy
   twoPi = Math.PI * 2
@@ -16,18 +16,22 @@ class @Spiderfy
   # Note: it's OK that this constructor comes after the properties, because of function hoisting
   constructor: (@map, opts = {}) ->
     for key of Spiderfy.defaults
+      continue if Spiderfy.defaults.hasOwnProperty(key) is no
       @[key] = if opts.hasOwnProperty(key) then opts[key] else Spiderfy.defaults[key]
-    @enabled = yes
+    @isEnabled = yes
     @initMarkerArrays()
     @listeners = {}
     @bounds = null
     @ne = null
     @sw = null
     @visibleMarkers = []
+    @isActivating = no
+    @isDeactivating = no
+    @data = {}
     if @viewportOnly
       @updateBounds()
       @map.on('moveend', @updateBounds.bind(@))
-    if @offEvents && @offEvents.length
+    if @offEvents and @offEvents.length
       for e in @offEvents
         @map.on(e, @deactivate.bind(@))
 
@@ -40,10 +44,9 @@ class @Spiderfy
     @bodies = []
 
   addMarker: (marker) ->
-    return @ if marker._hasSpiderfy?
-    marker._hasSpiderfy = yes
+    return @ if @data.hasOwnProperty(marker._leaflet_id)
     markerListener = () => @activateMarker(marker)
-    if @onEvents && @onEvents.length
+    if @onEvents.constructor is Array and @onEvents.length > 0
       for e in @onEvents
         marker.on(e, markerListener)
     @markerListeners.push(markerListener)
@@ -53,14 +56,14 @@ class @Spiderfy
   getMarkers: () -> @markers[0..]  # returns a copy, so no funny business
 
   removeMarker: (marker) ->
-    @deactivate() if marker._spiderfyData?  # otherwise it'll be stuck there forever!
+    @deactivate() if @data.hasOwnProperty(marker._leaflet_id)  # otherwise it'll be stuck there forever!
     i = @arrIndexOf(@markers, marker)
     return @ if i < 0
     markerListener = @markerListeners.splice(i, 1)[0]
-    if @onEvents && @onEvents.length
+    if @onEvents and @onEvents.length
       for e in @onEvents
         marker.removeEventListener(e, markerListener)
-    delete marker._hasSpiderfy
+    delete @data[marker._leaflet_id]
     @markers.splice(i, 1)
     @
 
@@ -68,10 +71,10 @@ class @Spiderfy
     @deactivate()
     for marker, i in @markers
       markerListener = @markerListeners[i]
-      if @onEvents && @onEvents.length
+      if @onEvents and @onEvents.length > 0
         for e in @onEvents
           marker.removeEventListener(e, markerListener)
-      delete marker._hasSpiderfy
+      delete @data[marker._leaflet_id]
     @initMarkerArrays()
     @
 
@@ -113,12 +116,13 @@ class @Spiderfy
       pt
 
   activateMarker: (marker) ->
+    isActive = @data.hasOwnProperty(marker._leaflet_id)
+    if @keep is no
+      @deactivate() unless isActive
     latLng = marker.getLatLng()
-    return @ if @viewportOnly && !@isInViewPort(latLng)
-    active = marker._spiderfyData?
-    if !@keep
-      @deactivate() unless active
-    if active or !@enabled
+    return @ if @viewportOnly and @isInViewPort(latLng) is no
+
+    if isActive or @isEnabled is no
       @trigger('click', marker)
     else
       nearbyMarkerData = []
@@ -134,18 +138,18 @@ class @Spiderfy
           nonNearbyMarkers.push(m)
       if nearbyMarkerData.length is 1  # 1 => the one clicked => none nearby
         @trigger('click', marker)
-      else if (nearbyMarkerData.length > 0 && nonNearbyMarkers.length > 0)
+      else if nearbyMarkerData.length > 0 and nonNearbyMarkers.length > 0
         @activate(nearbyMarkerData, nonNearbyMarkers)
     @
 
-  makeHighlightListeners: (marker) ->
-    highlight:   => marker._spiderfyData.leg.setStyle(color: @legColors.highlighted)
-    unhighlight: => marker._spiderfyData.leg.setStyle(color: @legColors.usual)
+  setColorStyle: (item, color) ->
+    item.setStyle(color: color)
 
   activate: (markerData, nonNearbyMarkers) ->
-    return unless @enabled
-    @activating = yes
-    @updateBounds() if @viewportOnly
+    return @ unless @isEnabled
+    return @ if @isActivating
+    @isActivating = yes
+    @updateBounds() if @viewportOnly is yes
     numFeet = markerData.length
     bodyPt = @ptAverage(md.markerPt for md in markerData)
     footPts = if numFeet >= @circleSpiralSwitchover
@@ -153,7 +157,8 @@ class @Spiderfy
     else
       @generatePtsCircle(numFeet, bodyPt)
     lastMarkerCoords = null
-    activeMarkers = for footPt in footPts
+    activeMarkers = []
+    for footPt in footPts
       footLl = @map.layerPointToLatLng(footPt)
       nearestMarkerDatum = @minExtract(markerData, (md) => @ptDistanceSq(md.markerPt, footPt))
       marker = nearestMarkerDatum.marker
@@ -165,45 +170,46 @@ class @Spiderfy
         clickable: no)
 
       @map.addLayer(leg)
-      marker._spiderfyData =
+      if @data.hasOwnProperty(marker._leaflet_id)
+        oldData = @data[marker._leaflet_id]
+        @map.removeLayer(oldData.leg)
+      data = @data[marker._leaflet_id] =
         usualPosition: marker.getLatLng()
         leg: leg
-
       unless @legColors.highlighted is @legColors.usual
-        mhl = @makeHighlightListeners(marker)
-        marker._spiderfyData.highlightListeners = mhl
-        marker.on('mouseover', mhl.highlight)
-        marker.on('mouseout',  mhl.unhighlight)
+        marker.on('mouseover', data.over = @setColorStyle.bind(@, data.leg, @legColors.highlighted))
+        marker.on('mouseout', data.out = @setColorStyle.bind(@, data.leg, @legColors.usual))
       marker.setLatLng(footLl)
       if marker.hasOwnProperty('setZIndexOffset')
         marker.setZIndexOffset(1000000)
       @visibleMarkers.push(marker)
-      marker
-    delete @activating
+      activeMarkers.push(marker)
+    @isActivating = no
     @isActive = yes
-    if @body && lastMarkerCoords != null
+    if @body and lastMarkerCoords
       body = L.circleMarker(lastMarkerCoords, @body)
-      marker._spiderfyData.body = body
       @map.addLayer(body)
       @bodies.push(body)
+      @data[marker._leaflet_id].body = body
     @trigger('activate', activeMarkers, nonNearbyMarkers)
 
   deactivate: (markerNotToMove = null) ->
-    return @ unless @isActive?
-    @deactivating = yes
+    return @ if @isActive is no
+    return @ if @isDeactivating
+    @isDeactivating = yes
     inactiveMarkers = []
     nonNearbyMarkers = []
     for marker in @visibleMarkers
-      if marker._spiderfyData?
-        @map.removeLayer(marker._spiderfyData.leg)
-        marker.setLatLng(marker._spiderfyData.usualPosition) unless marker is markerNotToMove
+      if @data.hasOwnProperty(marker._leaflet_id)
+        data = @data[marker._leaflet_id]
+        delete @data[marker._leaflet_id]
+        @map.removeLayer(data.leg)
+        marker.setLatLng(data.usualPosition) unless marker is markerNotToMove
         if marker.hasOwnProperty('setZIndexOffset')
           marker.setZIndexOffset(0)
-        mhl = marker._spiderfyData.highlightListeners
-        if mhl?
-          marker.removeEventListener('mouseover', mhl.highlight)
-          marker.removeEventListener('mouseout',  mhl.unhighlight)
-        delete marker._spiderfyData
+        if data.hasOwnProperty('over')
+          marker.off('mouseover', data.over)
+          marker.off('mouseout', data.out)
         inactiveMarkers.push(marker)
         activeMarkerIndex = @visibleMarkers.indexOf(marker)
         if activeMarkerIndex > -1 then @visibleMarkers.splice(activeMarkerIndex, -1)
@@ -213,8 +219,8 @@ class @Spiderfy
     for body in @bodies
       @map.removeLayer(body)
 
-    delete @deactivating
-    delete @isActive
+    @isDeactivating = no
+    @isActive = no
     @trigger('deactivate', inactiveMarkers, nonNearbyMarkers)
     @
 
@@ -232,23 +238,23 @@ class @Spiderfy
     numPts = pts.length
     new L.Point(sumX / numPts, sumY / numPts)
 
-  minExtract: (set, func) ->  # destructive! returns minimum, and also removes it from the set
-    for item, index in set
+  minExtract: (array, func) ->  # destructive! returns minimum, and also removes it from the array
+    for item, index in array
       val = func(item)
       if ! bestIndex? || val < bestVal
         bestVal = val
         bestIndex = index
-    set.splice(bestIndex, 1)[0]
+    array.splice(bestIndex, 1)[0]
 
-  arrIndexOf: (arr, obj) ->
-    return arr.indexOf(obj) if arr.indexOf?
-    (return i if o is obj) for o, i in arr
+  arrIndexOf: (array, obj) ->
+    return array.indexOf(obj) if array.constructor is Array
+    (return i if o is obj) for o, i in array
     -1
   enable: () ->
-    @enabled = yes
+    @isEnabled = yes
     @
   disable: () ->
-    @enabled = no
+    @isEnabled = no
     @
   updateBounds: () ->
     bounds = @bounds = @map.getBounds()
@@ -257,9 +263,9 @@ class @Spiderfy
     @
 
   isInViewPort: (latLng) ->
-    latLng.lat > @sw.lat &&
-    latLng.lat < @ne.lat &&
-    latLng.lng > @sw.lng &&
+    latLng.lat > @sw.lat and
+    latLng.lat < @ne.lat and
+    latLng.lng > @sw.lng and
     latLng.lng < @ne.lng
 
 
@@ -334,7 +340,7 @@ L.Spiderfy = L.Control.extend(
     if options.click then _spiderfy.addListener('click', options.click)
     if options.activate then _spiderfy.addListener('activate', options.activate)
     if options.deactivate then _spiderfy.addListener('deactivate', options.deactivate)
-    active = yes
+    isActive = yes
     buttonEnabled = options.msg.buttonEnabled
     buttonDisabled = options.msg.buttonDisabled
     button = L.DomUtil.create('a', 'leaflet-bar leaflet-control leaflet-control-spiderfy')
@@ -349,8 +355,8 @@ L.Spiderfy = L.Control.extend(
       _spiderfy.addMarker(marker)
 
     button.onclick = () ->
-      if (active)
-        active = no
+      if (isActive)
+        isActive = no
         button.setAttribute('title', buttonDisabled)
         style.opacity = 0.5
         _spiderfy
@@ -360,7 +366,7 @@ L.Spiderfy = L.Control.extend(
         if options.disable
           options.disable()
       else
-        active = yes
+        isActive = yes
         button.setAttribute('title', buttonEnabled)
         style.opacity = 1
         _spiderfy
@@ -406,13 +412,10 @@ L.Spiderfy = L.Control.extend(
   activateMarker: (marker) ->
     @_spiderfy.activateMarker(marker)
     @
-  makeHighlightListeners: (marker) ->
-    @_spiderfy.makeHighlightListeners(marker)
-    @
   activate: (markerData, nonNearbyMarkers) ->
     @_spiderfy.activate(markerData, nonNearbyMarkers)
     @
-  deactivate: (markerNotToMove = null) ->
+  deactivate: (markerNotToMove) ->
     @_spiderfy.deactivate(markerNotToMove)
     @
   hideVisibleMarkers: () ->
@@ -422,8 +425,8 @@ L.Spiderfy = L.Control.extend(
     @_spiderfy.ptDistanceSq(pt1, pt2)
   ptAverage: (pts) ->
     @_spiderfy.ptAverage(pts)
-  minExtract: (set, func) ->
-    @_spiderfy.minExtract(set, func)
+  minExtract: (array, func) ->
+    @_spiderfy.minExtract(array, func)
   arrIndexOf: (arr, obj) ->
     @_spiderfy.arrIndexOf(arr, obj)
   enable: () ->

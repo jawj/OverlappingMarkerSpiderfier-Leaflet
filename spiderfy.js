@@ -11,7 +11,7 @@
   var defaults,
     slice = [].slice;
 
-  if (this.L == null) {
+  if (this.hasOwnProperty('L') === false) {
     return;
   }
 
@@ -27,15 +27,21 @@
         opts = {};
       }
       for (key in Spiderfy.defaults) {
+        if (Spiderfy.defaults.hasOwnProperty(key) === false) {
+          continue;
+        }
         this[key] = opts.hasOwnProperty(key) ? opts[key] : Spiderfy.defaults[key];
       }
-      this.enabled = true;
+      this.isEnabled = true;
       this.initMarkerArrays();
       this.listeners = {};
       this.bounds = null;
       this.ne = null;
       this.sw = null;
       this.visibleMarkers = [];
+      this.isActivating = false;
+      this.isDeactivating = false;
+      this.data = {};
       if (this.viewportOnly) {
         this.updateBounds();
         this.map.on('moveend', this.updateBounds.bind(this));
@@ -58,16 +64,15 @@
       },
       addMarker: function(marker) {
         var e, j, len, markerListener, ref;
-        if (marker._hasSpiderfy != null) {
+        if (this.data.hasOwnProperty(marker._leaflet_id)) {
           return this;
         }
-        marker._hasSpiderfy = true;
         markerListener = (function(_this) {
           return function() {
             return _this.activateMarker(marker);
           };
         })(this);
-        if (this.onEvents && this.onEvents.length) {
+        if (this.onEvents.constructor === Array && this.onEvents.length > 0) {
           ref = this.onEvents;
           for (j = 0, len = ref.length; j < len; j++) {
             e = ref[j];
@@ -83,7 +88,7 @@
       },
       removeMarker: function(marker) {
         var e, i, j, len, markerListener, ref;
-        if (marker._spiderfyData != null) {
+        if (this.data.hasOwnProperty(marker._leaflet_id)) {
           this.deactivate();
         }
         i = this.arrIndexOf(this.markers, marker);
@@ -98,7 +103,7 @@
             marker.removeEventListener(e, markerListener);
           }
         }
-        delete marker._hasSpiderfy;
+        delete this.data[marker._leaflet_id];
         this.markers.splice(i, 1);
         return this;
       },
@@ -109,14 +114,14 @@
         for (i = j = 0, len = ref.length; j < len; i = ++j) {
           marker = ref[i];
           markerListener = this.markerListeners[i];
-          if (this.onEvents && this.onEvents.length) {
+          if (this.onEvents && this.onEvents.length > 0) {
             ref1 = this.onEvents;
             for (k = 0, len1 = ref1.length; k < len1; k++) {
               e = ref1[k];
               marker.removeEventListener(e, markerListener);
             }
           }
-          delete marker._hasSpiderfy;
+          delete this.data[marker._leaflet_id];
         }
         this.initMarkerArrays();
         return this;
@@ -176,18 +181,18 @@
         return results;
       },
       activateMarker: function(marker) {
-        var active, j, latLng, len, m, mPt, markerPt, nearbyMarkerData, nonNearbyMarkers, pxSq, ref;
-        latLng = marker.getLatLng();
-        if (this.viewportOnly && !this.isInViewPort(latLng)) {
-          return this;
-        }
-        active = marker._spiderfyData != null;
-        if (!this.keep) {
-          if (!active) {
+        var isActive, j, latLng, len, m, mPt, markerPt, nearbyMarkerData, nonNearbyMarkers, pxSq, ref;
+        isActive = this.data.hasOwnProperty(marker._leaflet_id);
+        if (this.keep === false) {
+          if (!isActive) {
             this.deactivate();
           }
         }
-        if (active || !this.enabled) {
+        latLng = marker.getLatLng();
+        if (this.viewportOnly && this.isInViewPort(latLng) === false) {
+          return this;
+        }
+        if (isActive || this.isEnabled === false) {
           this.trigger('click', marker);
         } else {
           nearbyMarkerData = [];
@@ -218,31 +223,21 @@
         }
         return this;
       },
-      makeHighlightListeners: function(marker) {
-        return {
-          highlight: (function(_this) {
-            return function() {
-              return marker._spiderfyData.leg.setStyle({
-                color: _this.legColors.highlighted
-              });
-            };
-          })(this),
-          unhighlight: (function(_this) {
-            return function() {
-              return marker._spiderfyData.leg.setStyle({
-                color: _this.legColors.usual
-              });
-            };
-          })(this)
-        };
+      setColorStyle: function(item, color) {
+        return item.setStyle({
+          color: color
+        });
       },
       activate: function(markerData, nonNearbyMarkers) {
-        var activeMarkers, body, bodyPt, footLl, footPt, footPts, lastMarkerCoords, leg, marker, markerCoords, md, mhl, nearestMarkerDatum, numFeet;
-        if (!this.enabled) {
-          return;
+        var activeMarkers, body, bodyPt, data, footLl, footPt, footPts, j, lastMarkerCoords, leg, len, marker, markerCoords, md, nearestMarkerDatum, numFeet, oldData;
+        if (!this.isEnabled) {
+          return this;
         }
-        this.activating = true;
-        if (this.viewportOnly) {
+        if (this.isActivating) {
+          return this;
+        }
+        this.isActivating = true;
+        if (this.viewportOnly === true) {
           this.updateBounds();
         }
         numFeet = markerData.length;
@@ -257,83 +252,84 @@
         })());
         footPts = numFeet >= this.circleSpiralSwitchover ? this.generatePtsSpiral(numFeet, bodyPt).reverse() : this.generatePtsCircle(numFeet, bodyPt);
         lastMarkerCoords = null;
-        activeMarkers = (function() {
-          var j, len, results;
-          results = [];
-          for (j = 0, len = footPts.length; j < len; j++) {
-            footPt = footPts[j];
-            footLl = this.map.layerPointToLatLng(footPt);
-            nearestMarkerDatum = this.minExtract(markerData, (function(_this) {
-              return function(md) {
-                return _this.ptDistanceSq(md.markerPt, footPt);
-              };
-            })(this));
-            marker = nearestMarkerDatum.marker;
-            markerCoords = marker.getLatLng();
-            lastMarkerCoords = markerCoords;
-            leg = new L.Polyline([markerCoords, footLl], {
-              color: this.legColors.usual,
-              weight: this.legWeight,
-              clickable: false
-            });
-            this.map.addLayer(leg);
-            marker._spiderfyData = {
-              usualPosition: marker.getLatLng(),
-              leg: leg
+        activeMarkers = [];
+        for (j = 0, len = footPts.length; j < len; j++) {
+          footPt = footPts[j];
+          footLl = this.map.layerPointToLatLng(footPt);
+          nearestMarkerDatum = this.minExtract(markerData, (function(_this) {
+            return function(md) {
+              return _this.ptDistanceSq(md.markerPt, footPt);
             };
-            if (this.legColors.highlighted !== this.legColors.usual) {
-              mhl = this.makeHighlightListeners(marker);
-              marker._spiderfyData.highlightListeners = mhl;
-              marker.on('mouseover', mhl.highlight);
-              marker.on('mouseout', mhl.unhighlight);
-            }
-            marker.setLatLng(footLl);
-            if (marker.hasOwnProperty('setZIndexOffset')) {
-              marker.setZIndexOffset(1000000);
-            }
-            this.visibleMarkers.push(marker);
-            results.push(marker);
+          })(this));
+          marker = nearestMarkerDatum.marker;
+          markerCoords = marker.getLatLng();
+          lastMarkerCoords = markerCoords;
+          leg = new L.Polyline([markerCoords, footLl], {
+            color: this.legColors.usual,
+            weight: this.legWeight,
+            clickable: false
+          });
+          this.map.addLayer(leg);
+          if (this.data.hasOwnProperty(marker._leaflet_id)) {
+            oldData = this.data[marker._leaflet_id];
+            this.map.removeLayer(oldData.leg);
           }
-          return results;
-        }).call(this);
-        delete this.activating;
+          data = this.data[marker._leaflet_id] = {
+            usualPosition: marker.getLatLng(),
+            leg: leg
+          };
+          if (this.legColors.highlighted !== this.legColors.usual) {
+            marker.on('mouseover', data.over = this.setColorStyle.bind(this, data.leg, this.legColors.highlighted));
+            marker.on('mouseout', data.out = this.setColorStyle.bind(this, data.leg, this.legColors.usual));
+          }
+          marker.setLatLng(footLl);
+          if (marker.hasOwnProperty('setZIndexOffset')) {
+            marker.setZIndexOffset(1000000);
+          }
+          this.visibleMarkers.push(marker);
+          activeMarkers.push(marker);
+        }
+        this.isActivating = false;
         this.isActive = true;
-        if (this.body && lastMarkerCoords !== null) {
+        if (this.body && lastMarkerCoords) {
           body = L.circleMarker(lastMarkerCoords, this.body);
-          marker._spiderfyData.body = body;
           this.map.addLayer(body);
           this.bodies.push(body);
+          this.data[marker._leaflet_id].body = body;
         }
         return this.trigger('activate', activeMarkers, nonNearbyMarkers);
       },
       deactivate: function(markerNotToMove) {
-        var activeMarkerIndex, body, inactiveMarkers, j, k, len, len1, marker, mhl, nonNearbyMarkers, ref, ref1;
+        var activeMarkerIndex, body, data, inactiveMarkers, j, k, len, len1, marker, nonNearbyMarkers, ref, ref1;
         if (markerNotToMove == null) {
           markerNotToMove = null;
         }
-        if (this.isActive == null) {
+        if (this.isActive === false) {
           return this;
         }
-        this.deactivating = true;
+        if (this.isDeactivating) {
+          return this;
+        }
+        this.isDeactivating = true;
         inactiveMarkers = [];
         nonNearbyMarkers = [];
         ref = this.visibleMarkers;
         for (j = 0, len = ref.length; j < len; j++) {
           marker = ref[j];
-          if (marker._spiderfyData != null) {
-            this.map.removeLayer(marker._spiderfyData.leg);
+          if (this.data.hasOwnProperty(marker._leaflet_id)) {
+            data = this.data[marker._leaflet_id];
+            delete this.data[marker._leaflet_id];
+            this.map.removeLayer(data.leg);
             if (marker !== markerNotToMove) {
-              marker.setLatLng(marker._spiderfyData.usualPosition);
+              marker.setLatLng(data.usualPosition);
             }
             if (marker.hasOwnProperty('setZIndexOffset')) {
               marker.setZIndexOffset(0);
             }
-            mhl = marker._spiderfyData.highlightListeners;
-            if (mhl != null) {
-              marker.removeEventListener('mouseover', mhl.highlight);
-              marker.removeEventListener('mouseout', mhl.unhighlight);
+            if (data.hasOwnProperty('over')) {
+              marker.off('mouseover', data.over);
+              marker.off('mouseout', data.out);
             }
-            delete marker._spiderfyData;
             inactiveMarkers.push(marker);
             activeMarkerIndex = this.visibleMarkers.indexOf(marker);
             if (activeMarkerIndex > -1) {
@@ -348,8 +344,8 @@
           body = ref1[k];
           this.map.removeLayer(body);
         }
-        delete this.deactivating;
-        delete this.isActive;
+        this.isDeactivating = false;
+        this.isActive = false;
         this.trigger('deactivate', inactiveMarkers, nonNearbyMarkers);
         return this;
       },
@@ -371,25 +367,25 @@
         numPts = pts.length;
         return new L.Point(sumX / numPts, sumY / numPts);
       },
-      minExtract: function(set, func) {
+      minExtract: function(array, func) {
         var bestIndex, bestVal, index, item, j, len, val;
-        for (index = j = 0, len = set.length; j < len; index = ++j) {
-          item = set[index];
+        for (index = j = 0, len = array.length; j < len; index = ++j) {
+          item = array[index];
           val = func(item);
           if ((typeof bestIndex === "undefined" || bestIndex === null) || val < bestVal) {
             bestVal = val;
             bestIndex = index;
           }
         }
-        return set.splice(bestIndex, 1)[0];
+        return array.splice(bestIndex, 1)[0];
       },
-      arrIndexOf: function(arr, obj) {
+      arrIndexOf: function(array, obj) {
         var i, j, len, o;
-        if (arr.indexOf != null) {
-          return arr.indexOf(obj);
+        if (array.constructor === Array) {
+          return array.indexOf(obj);
         }
-        for (i = j = 0, len = arr.length; j < len; i = ++j) {
-          o = arr[i];
+        for (i = j = 0, len = array.length; j < len; i = ++j) {
+          o = array[i];
           if (o === obj) {
             return i;
           }
@@ -397,11 +393,11 @@
         return -1;
       },
       enable: function() {
-        this.enabled = true;
+        this.isEnabled = true;
         return this;
       },
       disable: function() {
-        this.enabled = false;
+        this.isEnabled = false;
         return this;
       },
       updateBounds: function() {
@@ -476,7 +472,7 @@
       icon: defaults.icon
     },
     onAdd: function(map) {
-      var _spiderfy, active, button, buttonDisabled, buttonEnabled, j, len, marker, options, ref, style;
+      var _spiderfy, button, buttonDisabled, buttonEnabled, isActive, j, len, marker, options, ref, style;
       options = this.options;
       _spiderfy = this._spiderfy = new Spiderfy(map, options);
       if (options.click) {
@@ -488,7 +484,7 @@
       if (options.deactivate) {
         _spiderfy.addListener('deactivate', options.deactivate);
       }
-      active = true;
+      isActive = true;
       buttonEnabled = options.msg.buttonEnabled;
       buttonDisabled = options.msg.buttonDisabled;
       button = L.DomUtil.create('a', 'leaflet-bar leaflet-control leaflet-control-spiderfy');
@@ -505,8 +501,8 @@
         _spiderfy.addMarker(marker);
       }
       button.onclick = function() {
-        if (active) {
-          active = false;
+        if (isActive) {
+          isActive = false;
           button.setAttribute('title', buttonDisabled);
           style.opacity = 0.5;
           _spiderfy.deactivate().disable();
@@ -514,7 +510,7 @@
             return options.disable();
           }
         } else {
-          active = true;
+          isActive = true;
           button.setAttribute('title', buttonEnabled);
           style.opacity = 1;
           _spiderfy.enable();
@@ -574,18 +570,11 @@
       this._spiderfy.activateMarker(marker);
       return this;
     },
-    makeHighlightListeners: function(marker) {
-      this._spiderfy.makeHighlightListeners(marker);
-      return this;
-    },
     activate: function(markerData, nonNearbyMarkers) {
       this._spiderfy.activate(markerData, nonNearbyMarkers);
       return this;
     },
     deactivate: function(markerNotToMove) {
-      if (markerNotToMove == null) {
-        markerNotToMove = null;
-      }
       this._spiderfy.deactivate(markerNotToMove);
       return this;
     },
@@ -599,8 +588,8 @@
     ptAverage: function(pts) {
       return this._spiderfy.ptAverage(pts);
     },
-    minExtract: function(set, func) {
-      return this._spiderfy.minExtract(set, func);
+    minExtract: function(array, func) {
+      return this._spiderfy.minExtract(array, func);
     },
     arrIndexOf: function(arr, obj) {
       return this._spiderfy.arrIndexOf(arr, obj);
