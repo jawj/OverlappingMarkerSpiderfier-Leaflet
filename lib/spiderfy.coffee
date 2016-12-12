@@ -138,7 +138,7 @@ class @Spiderfy
           nonNearbyMarkers.push(m)
       if nearbyMarkerData.length is 1  # 1 => the one clicked => none nearby
         @trigger('click', marker)
-      else if nearbyMarkerData.length > 0 and nonNearbyMarkers.length > 0
+      else if nearbyMarkerData.length > 0
         @activate(nearbyMarkerData, nonNearbyMarkers)
     @
 

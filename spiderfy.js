@@ -217,7 +217,7 @@
           }
           if (nearbyMarkerData.length === 1) {
             this.trigger('click', marker);
-          } else if (nearbyMarkerData.length > 0 && nonNearbyMarkers.length > 0) {
+          } else if (nearbyMarkerData.length > 0) {
             this.activate(nearbyMarkerData, nonNearbyMarkers);
           }
         }
