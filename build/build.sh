@@ -1,5 +1,7 @@
 #!/bin/bash
 
+CURDIR=`pwd`
+cd `dirname $0`
 INDIR=../lib/
 INPREFIX=oms
 
@@ -9,7 +11,7 @@ OUTFILE=${OUTDIR}${OUTNAME}
 
 coffee --output $OUTDIR --compile ${INDIR}${INPREFIX}.coffee
 
-java -jar /usr/local/closure-compiler/compiler.jar \
+java -jar /opt/closure-compiler/compiler.jar \
   --compilation_level SIMPLE_OPTIMIZATIONS \
   --js ${OUTDIR}${INPREFIX}.js \
   --output_wrapper '(function(){%output%}).call(this);' \
@@ -17,5 +19,7 @@ java -jar /usr/local/closure-compiler/compiler.jar \
 
 echo '/*' $(date) '*/' >> $OUTFILE
 
-cp $OUTFILE ../../gh-pages/bin
-cp ${OUTDIR}${INPREFIX}.js ../../gh-pages/bin
+cp $OUTFILE ../dist/
+cp ${OUTDIR}${INPREFIX}.js ../dist/
+
+cd "$CURDIR"
