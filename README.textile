@@ -18,17 +18,17 @@ That might be what you want. However, it probably *isn't* what you want (or isn'
 
 h2. Demo
 
-See the "demo map":http://jawj.github.com/OverlappingMarkerSpiderfier-Leaflet/demo.html (the data is random: reload the map to reposition the markers).
+See the "demo map":http://jawj.github.com/OverlappingMarkerSpiderfier-Leaflet/ (the data is random: reload the map to reposition the markers).
 
 h2. Download
 
-Download "the compiled, minified JS source":http://jawj.github.com/OverlappingMarkerSpiderfier-Leaflet/bin/oms.min.js.
+Download "the compiled JS source":http://jawj.github.com/OverlappingMarkerSpiderfier-Leaflet/oms.js.
 
 Or use it straight from "cdnjs":https://cdnjs.com/libraries/OverlappingMarkerSpiderfier-Leaflet: @<script src="https://cdnjs.cloudflare.com/ajax/libs/OverlappingMarkerSpiderfier-Leaflet/0.2.6/oms.min.js"></script>@.
 
 h2. How to use
 
-See the "demo map source":http://github.com/jawj/OverlappingMarkerSpiderfier-Leaflet/blob/gh-pages/demo.html, or follow along here for a slightly simpler usage with commentary.
+See the "demo map source":http://github.com/jawj/OverlappingMarkerSpiderfier-Leaflet/blob/gh-pages/index.html, or follow along here for a slightly simpler usage with commentary.
 
 Create your map like normal (using the beautiful "Stamen watercolour OSM map":http://maps.stamen.com/#watercolor):
 
@@ -152,6 +152,9 @@ You can set the following properties on an OverlappingMarkerSpiderfier instance:
 These determine the usual and highlighted colours of the lines. 
 
 You can also get and set any of the options noted in the constructor function documentation above as properties on an OverlappingMarkerSpiderfier instance.
+
+h3. Canvas
+Leaflet.spiderfy is 100% compliant with Leaflet's canvas renderer.  Simply place `window.L_PREFER_CANVAS = true` before loading leaflet, and robert it your mother's brother.
 
 h2. Licence
 

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg>
+<svg viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+   <g id="2">
+      <g id="1">
+         <circle cy="60" r="20"/>
+         <path d="M 0,0 v 60" stroke="black" stroke-width="10"/>
+      </g>
+      <use xlink:href="#1" transform="scale(-1)"/>
+   </g>
+   <use xlink:href="#2" transform="rotate(60)"/>
+   <use xlink:href="#2" transform="rotate(-60)"/>
+</svg>
