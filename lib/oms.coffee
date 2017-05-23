@@ -171,6 +171,7 @@ class @['OverlappingMarkerSpiderfier']
     unspiderfiedMarkers = []
     nonNearbyMarkers = []
     for marker in @markers
+      continue unless @map.hasLayer(marker)
       if marker['_omsData']?
         @map.removeLayer(marker['_omsData'].leg)
         marker.setLatLng(marker['_omsData'].usualPosition) unless marker is markerNotToMove
