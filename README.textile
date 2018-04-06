@@ -1,4 +1,4 @@
-📦🤗 npm-friendly fork of [jawj/OverlappingMarkerSpiderfier](https://github.com/jawj/OverlappingMarkerSpiderfier).
+📦🤗 npm-friendly fork of "jawj/OverlappingMarkerSpiderfier":https://github.com/jawj/OverlappingMarkerSpiderfier.
 
 h1. Overlapping Marker Spiderfier for Leaflet
 
