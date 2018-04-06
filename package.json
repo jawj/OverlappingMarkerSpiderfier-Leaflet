@@ -1,0 +1,30 @@
+{
+  "name": "overlapping-marker-spiderfier-leaflet",
+  "version": "0.2.6",
+  "description": "Deals with overlapping markers in the Leaflet maps API, Google Earth-style",
+  "keywords": [
+    "overlapping marker",
+    "spiderfier",
+    "leaflet",
+    "leaflet plugin"
+  ],
+  "homepage": "https://github.com/jawj/OverlappingMarkerSpiderfier-Leaflet",
+  "bugs": "https://github.com/jawj/OverlappingMarkerSpiderfier-Leaflet/issues",
+  "license": "MIT",
+  "main": "dist/oms.js",
+  "author": "George MacKerron <george@mackerron.com> (http://mackerron.com)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dwiyatci/OverlappingMarkerSpiderfier-Leaflet.git"
+  },
+  "devDependencies": {
+    "coffee-script": "1.12.7",
+    "lodash": "4.17.5",
+    "rollup": "0.57.1",
+    "rollup-plugin-coffee-script": "1.1.0",
+    "rollup-plugin-uglify": "3.0.0"
+  },
+  "scripts": {
+    "build": "rollup --config"
+  }
+}

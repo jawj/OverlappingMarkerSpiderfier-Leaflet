@@ -1,3 +1,5 @@
+📦🤗 npm-friendly fork of [jawj/OverlappingMarkerSpiderfier](https://github.com/jawj/OverlappingMarkerSpiderfier).
+
 h1. Overlapping Marker Spiderfier for Leaflet
 
 *Ever noticed how, in "Google Earth":http://earth.google.com, marker pins that overlap each other spring apart gracefully when you click them, so you can pick the one you meant?*
