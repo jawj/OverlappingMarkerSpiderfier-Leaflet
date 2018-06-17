@@ -1,6 +1,6 @@
 {
   "name": "overlapping-marker-spiderfier-leaflet",
-  "version": "0.2.6.1",
+  "version": "0.2.6-1",
   "description": "Deals with overlapping markers in the Leaflet maps API, Google Earth-style",
   "keywords": [
     "overlapping marker",
