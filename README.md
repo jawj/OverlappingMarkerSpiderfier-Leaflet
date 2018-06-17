@@ -1,6 +1,10 @@
 📦🤗 npm-friendly fork of
 [jawj/OverlappingMarkerSpiderfier](https://github.com/jawj/OverlappingMarkerSpiderfier).
 
+[![version](https://img.shields.io/npm/v/overlapping-marker-spiderfier-leaflet.svg)](https://www.npmjs.com/package/overlapping-marker-spiderfier-leaflet)
+[![downloads](https://img.shields.io/npm/dt/overlapping-marker-spiderfier-leaflet.svg)](http://npm-stat.com/charts.html?package=overlapping-marker-spiderfier-leaflet)
+![MIT License](https://img.shields.io/github/license/mashape/apistatus.svg)
+
 Overlapping Marker Spiderfier for Leaflet
 =========================================
 
@@ -71,46 +75,56 @@ or follow along here for a slightly simpler usage with commentary.
 Create your map like normal (using the beautiful [Stamen watercolour OSM
 map](http://maps.stamen.com/#watercolor)):
 
-    var map = new L.Map('map_canvas', {center: new L.LatLng(51.505, -0.09), zoom: 13});
-    var layer = new L.StamenTileLayer('watercolor');
-    map.addLayer(layer);
+```javascript
+var map = new L.Map('map_canvas', {center: new L.LatLng(51.505, -0.09), zoom: 13});
+var layer = new L.StamenTileLayer('watercolor');
+map.addLayer(layer);
+```
 
 Create an `OverlappingMarkerSpiderfier` instance:
 
-    var oms = new OverlappingMarkerSpiderfier(map);
+```javascript
+var oms = new OverlappingMarkerSpiderfier(map);
+```  
 
 Instead of adding click listeners to your markers directly via
 `marker.addEventListener` or `marker.on`, add a global listener on the
 `OverlappingMarkerSpiderfier` instance instead. The listener will be
 passed the clicked marker as its first argument.
 
-    var popup = new L.Popup();
-    oms.addListener('click', function(marker) {
-      popup.setContent(marker.desc);
-      popup.setLatLng(marker.getLatLng());
-      map.openPopup(popup);
-    });
+```javascript
+var popup = new L.Popup();
+oms.addListener('click', function(marker) {
+  popup.setContent(marker.desc);
+  popup.setLatLng(marker.getLatLng());
+  map.openPopup(popup);
+});
+```
 
 You can also add listeners on the `spiderfy` and `unspiderfy` events,
 which will be passed an array of the markers affected. In this example,
 we observe only the `spiderfy` event, using it to close any open
 `InfoWindow`:
 
-    oms.addListener('spiderfy', function(markers) {
-      map.closePopup();
-    });
+```javascript
+oms.addListener('spiderfy', function(markers) {
+  map.closePopup();
+});
+```
 
 Finally, tell the `OverlappingMarkerSpiderfier` instance about each
 marker as you add it, using the `addMarker` method:
 
-    for (var i = 0; i < window.mapData.length; i ++) {
-      var datum = window.mapData[i];
-      var loc = new L.LatLng(datum.lat, datum.lon);
-      var marker = new L.Marker(loc);
-      marker.desc = datum.d;
-      map.addLayer(marker);
-      oms.addMarker(marker);  // <-- here
-    }
+```javascript
+for (var i = 0; i < window.mapData.length; i ++) {
+  var datum = window.mapData[i];
+  var loc = new L.LatLng(datum.lat, datum.lon);
+  var marker = new L.Marker(loc);
+  marker.desc = datum.d;
+  map.addLayer(marker);
+  oms.addMarker(marker);  // <-- here
+}
+```
 
 Docs
 ----
@@ -123,7 +137,9 @@ tested with the 0.4 API version.
 
 ### Construction
 
-    new OverlappingMarkerSpiderfier(map, options)
+```javascript
+new OverlappingMarkerSpiderfier(map, options)
+```
 
 Creates an instance associated with `map` (an `L.Map`).
 
@@ -162,21 +178,29 @@ Note: methods that have no obvious return value return the
 OverlappingMarkerSpiderfier instance they were called on, in case you
 want to chain method calls.
 
-    addMarker(marker)
+```javascript
+addMarker(marker)
+```
 
 Adds `marker` (an `L.Marker`) to be tracked.
 
-    removeMarker(marker)
+```javascript
+removeMarker(marker)
+```
 
 Removes `marker` from those being tracked.
 
-    clearMarkers()
+```javascript
+clearMarkers()
+```
 
 Removes every `marker` from being tracked. Much quicker than calling
 `removeMarker` in a loop, since that has to search the markers array
 every time.
 
-    getMarkers()
+```javascript
+getMarkers()
+```
 
 Returns an `Array` of all the markers that are currently being tracked.
 This is a copy of the one used internally, so you can do what you like
@@ -184,7 +208,9 @@ with it.
 
 ### Instance methods: managing listeners
 
-    addListener(event, listenerFunc)
+```javascript
+addListener(event, listenerFunc)
+```
 
 Adds a listener to react to one of three events.
 
@@ -202,15 +228,21 @@ non-spiderfied markers when some markers are spiderfied --- e.g.
 highlighting those that are spiderfied, or dimming out those that
 aren't.
 
-    removeListener(event, listenerFunc)
+```javascript
+removeListener(event, listenerFunc)
+```
 
 Removes the specified listener on the specified event.
 
-    clearListeners(event)
+```javascript
+clearListeners(event)
+```
 
 Removes all listeners on the specified event.
 
-    unspiderfy()
+```javascript
+unspiderfy()
+```
 
 Returns any spiderfied markers to their original positions, and triggers
 any listeners you may have set for this event. Unless no markers are
