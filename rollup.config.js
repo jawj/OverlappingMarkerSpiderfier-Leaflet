@@ -1,5 +1,5 @@
 import coffee from 'rollup-plugin-coffee-script';
-import uglify from 'rollup-plugin-uglify';
+import { uglify } from 'rollup-plugin-uglify';
 import _ from 'lodash';
 
 import pkg from './package.json';
