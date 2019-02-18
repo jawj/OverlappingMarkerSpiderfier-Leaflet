@@ -149,7 +149,7 @@ class @['OverlappingMarkerSpiderfier']
       leg = new L.Polyline [marker.getLatLng(), footLl], {
         color: @['legColors']['usual']
         weight: @['legWeight']
-        clickable: no
+        interactive: no
       }
       @map.addLayer(leg)
       marker['_omsData'] = {usualPosition: marker.getLatLng(), leg: leg}
