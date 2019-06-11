@@ -284,7 +284,7 @@
               marker.addEventListener('mouseout', mhl.unhighlight);
             }
             marker.setLatLng(footLl);
-            marker.setZIndexOffset(1000000);
+            marker.setZIndexOffset(marker.options.zIndexOffset + 1000000);
             results.push(marker);
           }
           return results;
@@ -313,7 +313,7 @@
             if (marker !== markerNotToMove) {
               marker.setLatLng(marker['_omsData'].usualPosition);
             }
-            marker.setZIndexOffset(0);
+            marker.setZIndexOffset(marker.options.zIndexOffset - 1000000);
             mhl = marker['_omsData'].highlightListeners;
             if (mhl != null) {
               marker.removeEventListener('mouseover', mhl.highlight);
