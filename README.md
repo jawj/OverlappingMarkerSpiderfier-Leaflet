@@ -55,11 +55,7 @@ Download
 --------
 
 Download [the compiled, minified JS
-source](http://jawj.github.com/OverlappingMarkerSpiderfier-Leaflet/bin/oms.min.js).
-
-Or use it straight from
-[cdnjs](https://cdnjs.com/libraries/OverlappingMarkerSpiderfier-Leaflet):
-`<script src="https://cdnjs.cloudflare.com/ajax/libs/OverlappingMarkerSpiderfier-Leaflet/0.2.6/oms.min.js"></script>`.
+source](https://unpkg.com/overlapping-marker-spiderfier-leaflet@latest).
 
 Or download it from npm:
 `npm isntall -S overlapping-marker-spiderfier-leaflet` or
