@@ -19,10 +19,10 @@
   },
   "devDependencies": {
     "coffee-script": "1.12.7",
-    "lodash": "4.17.10",
-    "rollup": "0.60.7",
+    "lodash": "4.17.11",
+    "rollup": "1.15.1",
     "rollup-plugin-coffee-script": "1.1.0",
-    "rollup-plugin-uglify": "4.0.0"
+    "rollup-plugin-uglify": "6.0.2"
   },
   "scripts": {
     "install:clean": "yarn upgrade || yarn install",
